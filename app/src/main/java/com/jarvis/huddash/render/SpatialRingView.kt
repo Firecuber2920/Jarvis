@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.View
@@ -124,6 +125,32 @@ class SpatialRingView @JvmOverloads constructor(
         color = glowColor
         style = Paint.Style.STROKE
     }
+    private val expandedFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.BLACK
+        style = Paint.Style.FILL
+    }
+    private val expandedDividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = dimColor
+        style = Paint.Style.STROKE
+    }
+    // Left-aligned counterparts for expanded-view rows (compact panels stay centered).
+    private val expandedHeaderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = glowColor
+        textAlign = Paint.Align.LEFT
+        typeface = Typeface.MONOSPACE
+        letterSpacing = 0.15f
+    }
+    private val expandedTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = dimColor
+        textAlign = Paint.Align.LEFT
+        typeface = Typeface.MONOSPACE
+        letterSpacing = 0.1f
+    }
+    private val expandedBodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        textAlign = Paint.Align.LEFT
+        typeface = Typeface.MONOSPACE
+    }
 
     // Smaller panels, elliptical orbit: wide horizontally (landscape screen has the
     // room), tighter vertically (bounded by the shorter dimension).
@@ -142,6 +169,14 @@ class SpatialRingView @JvmOverloads constructor(
         titlePaint.textSize = baseRadiusPx * 0.24f
         primaryPaint.textSize = baseRadiusPx * 0.30f
         secondaryPaint.textSize = baseRadiusPx * 0.22f
+        expandedHeaderPaint.textSize = baseRadiusPx * 0.26f
+        expandedTitlePaint.textSize = baseRadiusPx * 0.22f
+        expandedBodyPaint.textSize = baseRadiusPx * 0.20f
+
+        // Expanded ("full investigation") view draws last so it sits on top of any
+        // other still-visible compact panels, and is drawn centered/full-size — the
+        // pinned panel's own compact ring node is skipped in favor of it.
+        var expanded: Pair<PanelContent, PanelId>? = null
 
         for (panel in PanelId.entries) {
             val gestureReveal = reveals[panel] ?: 0f
@@ -151,7 +186,15 @@ class SpatialRingView @JvmOverloads constructor(
             val effectiveReveal = if (isPinned) 1f else maxOf(gestureReveal, ambientReveal)
             if (effectiveReveal <= 0.01f) continue
 
+            if (isPinned && content.expandedItems.isNotEmpty()) {
+                expanded = content to panel
+                continue
+            }
             drawPanel(canvas, centerX, centerY, panel, content, effectiveReveal, isPinned)
+        }
+
+        expanded?.let { (content, _) ->
+            drawExpandedPanel(canvas, centerX, centerY, content.title, content.expandedItems)
         }
     }
 
@@ -230,6 +273,86 @@ class SpatialRingView @JvmOverloads constructor(
 
         content.progressFraction?.let { fraction ->
             drawProgressBar(canvas, px, cursorY + radius * 0.08f, radius * 1.1f, fraction.coerceIn(0f, 1f))
+        }
+    }
+
+    /**
+     * "Full investigation" detail view for a pinned panel with [PanelContent.expandedItems] —
+     * always centered on screen (not at the originating ring position) so it never clips
+     * off-screen, since E/W panels sit near the display edges on the elliptical orbit.
+     */
+    private fun drawExpandedPanel(canvas: Canvas, cx: Float, cy: Float, headerTitle: String, items: List<PanelContent>) {
+        val boxWidth = width * 0.5f
+        val padding = baseRadiusPx * 0.3f
+        val iconSize = (baseRadiusPx * 0.5f).toInt()
+        val rowHeight = baseRadiusPx * 1.0f
+        val headerHeight = expandedHeaderPaint.textSize * 1.8f
+        val boxHeight = (headerHeight + padding * 2 + rowHeight * items.size).coerceAtMost(height * 0.85f)
+
+        val rect = RectF(cx - boxWidth / 2f, cy - boxHeight / 2f, cx + boxWidth / 2f, cy + boxHeight / 2f)
+        val corner = padding * 0.6f
+
+        expandedFillPaint.alpha = 170
+        canvas.drawRoundRect(rect, corner, corner, expandedFillPaint)
+
+        ringPaint.alpha = 255
+        ringPaint.strokeWidth = baseRadiusPx * 0.045f
+        ringPaint.setShadowLayer(baseRadiusPx * 0.3f, 0f, 0f, glowColor)
+        canvas.drawRoundRect(rect, corner, corner, ringPaint)
+
+        expandedHeaderPaint.alpha = 255
+        canvas.drawText(headerTitle.uppercase(), rect.left + padding, rect.top + padding + expandedHeaderPaint.textSize, expandedHeaderPaint)
+
+        if (items.isEmpty()) {
+            expandedBodyPaint.alpha = 255
+            canvas.drawText("Nothing here", rect.left + padding, rect.top + headerHeight + padding + expandedBodyPaint.textSize, expandedBodyPaint)
+            return
+        }
+
+        val textLeft = rect.left + padding * 2 + iconSize
+        val textMaxWidth = rect.right - padding - textLeft
+        var rowY = rect.top + headerHeight + padding
+
+        expandedTitlePaint.alpha = 255
+        expandedBodyPaint.alpha = 255
+        expandedDividerPaint.alpha = 90
+        expandedDividerPaint.strokeWidth = 2f
+
+        for ((index, item) in items.withIndex()) {
+            val iconTop = rowY + rowHeight * 0.08f
+            val icon = item.iconDrawable
+            if (icon != null) {
+                icon.setBounds(
+                    (rect.left + padding).toInt(),
+                    iconTop.toInt(),
+                    (rect.left + padding + iconSize).toInt(),
+                    (iconTop + iconSize).toInt(),
+                )
+                icon.alpha = 255
+                icon.draw(canvas)
+            } else {
+                canvas.drawText(item.glyph, rect.left + padding, iconTop + iconSize * 0.75f, expandedHeaderPaint)
+            }
+
+            var textY = rowY + expandedTitlePaint.textSize
+            canvas.drawText(item.title.uppercase(), textLeft, textY, expandedTitlePaint)
+            textY += expandedTitlePaint.textSize * 1.2f
+
+            for (line in wrapText(item.primaryText, textMaxWidth, expandedBodyPaint, maxLines = 1)) {
+                canvas.drawText(line, textLeft, textY, expandedBodyPaint)
+                textY += expandedBodyPaint.textSize * 1.15f
+            }
+            item.secondaryText?.let { secondary ->
+                for (line in wrapText(secondary, textMaxWidth, expandedBodyPaint, maxLines = 1)) {
+                    canvas.drawText(line, textLeft, textY, expandedBodyPaint)
+                    textY += expandedBodyPaint.textSize * 1.15f
+                }
+            }
+
+            rowY += rowHeight
+            if (index != items.lastIndex) {
+                canvas.drawLine(rect.left + padding, rowY - rowHeight * 0.06f, rect.right - padding, rowY - rowHeight * 0.06f, expandedDividerPaint)
+            }
         }
     }
 

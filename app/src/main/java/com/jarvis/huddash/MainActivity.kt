@@ -20,6 +20,7 @@ import com.jarvis.huddash.input.FlickDirection
 import com.jarvis.huddash.input.InputController
 import com.jarvis.huddash.media.LiveMediaSource
 import com.jarvis.huddash.nav.LiveMapsNavSource
+import com.jarvis.huddash.nav.LiveNotificationsSource
 import com.jarvis.huddash.nav.MapsNavState
 import com.jarvis.huddash.nav.NotificationAccess
 import com.jarvis.huddash.panel.MediaPanelProvider
@@ -27,6 +28,7 @@ import com.jarvis.huddash.panel.MediaSource
 import com.jarvis.huddash.panel.MockCalendarSource
 import com.jarvis.huddash.panel.MockMediaSource
 import com.jarvis.huddash.panel.MockNavSource
+import com.jarvis.huddash.panel.MockNotificationsSource
 import com.jarvis.huddash.panel.NavPanelProvider
 import com.jarvis.huddash.panel.NotificationsPanelProvider
 import com.jarvis.huddash.panel.PanelId
@@ -48,7 +50,8 @@ class MainActivity : Activity() {
     private lateinit var inputController: InputController
     private val watchdogHandler = Handler(Looper.getMainLooper())
 
-    private val notificationsProvider: PanelProvider = NotificationsPanelProvider()
+    private val mockNotificationsProvider: PanelProvider = NotificationsPanelProvider(MockNotificationsSource())
+    private val liveNotificationsProvider: PanelProvider by lazy { NotificationsPanelProvider(LiveNotificationsSource()) }
     private val mockNavProvider: PanelProvider = NavPanelProvider(MockNavSource())
     private val liveNavProvider: PanelProvider = NavPanelProvider(LiveMapsNavSource())
     private val mockTimeProvider: PanelProvider = TimePanelProvider(MockCalendarSource())
@@ -199,9 +202,10 @@ class MainActivity : Activity() {
         val navIsLive = NotificationAccess.isGranted(this)
         val navProvider = if (navIsLive) liveNavProvider else mockNavProvider
         val timeProvider = if (CalendarAccess.isGranted(this)) liveTimeProvider else mockTimeProvider
-        // Media reuses the same notification-listener signal Nav depends on — no
-        // separate permission gate.
+        // Media and Notifications both reuse the same notification-listener signal
+        // Nav depends on — no separate permission gate for either.
         activeMediaSource = if (navIsLive) liveMediaSource else mockMediaSource
+        val notificationsProvider = if (navIsLive) liveNotificationsProvider else mockNotificationsProvider
 
         ringView.panelContents = mapOf(
             PanelId.TIME to timeProvider.getContent(),

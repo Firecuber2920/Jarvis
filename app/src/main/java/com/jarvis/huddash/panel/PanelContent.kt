@@ -16,6 +16,13 @@ data class PanelContent(
     val progressFraction: Float? = null,
     /** Real app icon (e.g. the currently-playing media app) drawn instead of [glyph] when present. */
     val iconDrawable: Drawable? = null,
+    /**
+     * "Full investigation" detail rows shown instead of the compact card when this
+     * panel is pinned — e.g. Notifications' full recent list. Empty for panels with
+     * no expanded view (renderer falls back to the compact card even while pinned).
+     * Items are flat rows: their own [expandedItems] is ignored (no nesting).
+     */
+    val expandedItems: List<PanelContent> = emptyList(),
 )
 
 /** Angular position around the ring — evenly spaced, N/E/S/W on a 4-panel ring. */

@@ -35,20 +35,35 @@ class TimePanelProvider(
 
     override fun getContent(): PanelContent {
         val event = calendarSource.nextEvent()
-            ?: return PanelContent(
+        val remainingMillis = event?.let { (it.startAtMillis - nowProvider()).coerceAtLeast(0) }
+
+        if (event == null || remainingMillis == null || remainingMillis > LOOKAHEAD_WINDOW_MILLIS) {
+            return PanelContent(
                 title = "Next",
-                primaryText = "No upcoming events",
+                primaryText = "Nothing in the next 24h",
                 glyph = "T",
             )
+        }
 
-        val remainingMinutes = TimeUnit.MILLISECONDS.toMinutes(
-            (event.startAtMillis - nowProvider()).coerceAtLeast(0)
-        )
         return PanelContent(
             title = "Next",
             primaryText = event.title,
-            secondaryText = if (remainingMinutes > 0) "in ${remainingMinutes}m" else "now",
+            secondaryText = "in ${formatRemaining(remainingMillis)}",
             glyph = "T",
         )
+    }
+
+    private fun formatRemaining(remainingMillis: Long): String {
+        val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(remainingMillis)
+        if (totalMinutes <= 0) return "now"
+        if (totalMinutes < 60) return "${totalMinutes}m"
+
+        val hours = totalMinutes / 60
+        val minutes = totalMinutes % 60
+        return if (minutes == 0L) "${hours}h" else "${hours}h ${minutes}m"
+    }
+
+    companion object {
+        private val LOOKAHEAD_WINDOW_MILLIS = TimeUnit.HOURS.toMillis(24)
     }
 }
