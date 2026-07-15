@@ -86,7 +86,7 @@ ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:30:1
 service#com.jarvis.huddash.nav.MapsNavListenerService
 ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:34:9-42:19
 	android:label
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:37:13-47
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:37:13-45
 	android:exported
 		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:36:13-36
 	android:permission

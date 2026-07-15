@@ -53,7 +53,7 @@
         <service
             android:name="com.jarvis.huddash.nav.MapsNavListenerService"
             android:exported="true"
-            android:label="HUD Dash Nav Relay"
+            android:label="Jarvis Nav Relay"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" >
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />

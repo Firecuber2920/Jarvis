@@ -19,9 +19,15 @@ private const val INSTAGRAM_PACKAGE = "com.instagram.android"
  * effect when the system is in a freeform-capable window mode, and whether DeX
  * actually honors the requested bounds (rather than opening the app fullscreen,
  * ignoring the hint, or refusing to run alongside our own fullscreen-immersive
- * activity) is unknown until tested live. If it doesn't dock cleanly, the fallback
- * is dropping FLAG_ACTIVITY_LAUNCH_ADJACENT and/or the bounds hint and accepting
- * whatever window behavior DeX defaults to.
+ * activity) is unknown until tested live.
+ *
+ * Deliberately does NOT pass FLAG_ACTIVITY_LAUNCH_ADJACENT — that's the explicit
+ * split-screen request flag, and it's the likely cause of DeX surfacing its full
+ * split-screen chrome/taskbar around the launched app instead of a cleaner floating
+ * window. Untested whether dropping it actually fixes that on real hardware; if the
+ * taskbar still appears, that may just be inherent to DeX entering desktop/multi-window
+ * mode once any second freeform window exists — not something either app can suppress
+ * from outside the system UI layer.
  */
 class AppWindowLauncher(private val activity: Activity) {
 
@@ -35,7 +41,7 @@ class AppWindowLauncher(private val activity: Activity) {
             Toast.makeText(activity, "$packageName isn't installed", Toast.LENGTH_SHORT).show()
             return
         }
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val options = ActivityOptions.makeBasic().apply { setLaunchBounds(bounds) }
         activity.startActivity(intent, options.toBundle())
     }

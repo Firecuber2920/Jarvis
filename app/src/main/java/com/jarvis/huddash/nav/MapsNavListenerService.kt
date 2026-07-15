@@ -1,7 +1,9 @@
 package com.jarvis.huddash.nav
 
+import android.app.Notification
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationManagerCompat
@@ -19,14 +21,16 @@ private const val MAX_FEED_SIZE = 8
  *    computes nothing independently).
  * 2. Tracks a rolling feed of recent notifications system-wide (for the Notifications
  *    panel), mirroring the current notification shade — entries drop out when
- *    dismissed, same as [onNotificationRemoved].
+ *    dismissed, same as [onNotificationRemoved]. Media-playback notifications are
+ *    excluded — that data already has its own dedicated Media panel; showing it again
+ *    here would just be redundant noise.
  */
 class MapsNavListenerService : NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
         try {
-            activeNotifications?.forEach { updateNotificationsFeed(it) }
+            activeNotifications?.forEach { updateNotificationsFeed(it, isLiveEvent = false) }
         } catch (e: SecurityException) {
             // Access can be revoked between grant and connect; feed just stays empty.
         }
@@ -66,13 +70,21 @@ class MapsNavListenerService : NotificationListenerService() {
         )
     }
 
-    private fun updateNotificationsFeed(sbn: StatusBarNotification) {
+    /**
+     * @param isLiveEvent false when called from [onListenerConnected]'s startup seeding —
+     * catching up on notifications that already existed isn't a "new arrival" worth
+     * flashing the panel for.
+     */
+    private fun updateNotificationsFeed(sbn: StatusBarNotification, isLiveEvent: Boolean = true) {
         if (sbn.packageName == packageName) return // never show our own notifications
+        if (isMediaNotification(sbn)) return // Media panel already covers this data
 
         val extras = sbn.notification.extras
         val title = extras.getCharSequence("android.title")?.toString().orEmpty()
         val text = extras.getCharSequence("android.text")?.toString().orEmpty()
         if (title.isBlank() && text.isBlank()) return
+
+        val isNew = NotificationsFeedState.entries.none { it.key == sbn.key }
 
         val entry = NotificationEntry(
             key = sbn.key,
@@ -86,6 +98,17 @@ class MapsNavListenerService : NotificationListenerService() {
         NotificationsFeedState.entries = (
             listOf(entry) + NotificationsFeedState.entries.filterNot { it.key == sbn.key }
         ).take(MAX_FEED_SIZE)
+
+        if (isLiveEvent && isNew) {
+            NotificationsFeedState.lastNewNotificationAtMillis = SystemClock.elapsedRealtime()
+        }
+    }
+
+    /** Standard Android signals for "this is a media transport notification," not a guess. */
+    private fun isMediaNotification(sbn: StatusBarNotification): Boolean {
+        val notification = sbn.notification
+        if (notification.category == Notification.CATEGORY_TRANSPORT) return true
+        return notification.extras.get(Notification.EXTRA_MEDIA_SESSION) != null
     }
 
     private fun appLabelFor(pkg: String): String = try {
@@ -117,6 +140,11 @@ object MapsNavState {
 object NotificationsFeedState {
     @Volatile
     var entries: List<NotificationEntry> = emptyList()
+        internal set
+
+    /** SystemClock.elapsedRealtime() of the last genuinely new (not just re-posted) notification. */
+    @Volatile
+    var lastNewNotificationAtMillis: Long = 0L
         internal set
 }
 

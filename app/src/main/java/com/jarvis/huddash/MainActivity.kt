@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.MotionEvent
 import android.view.View
@@ -24,6 +25,7 @@ import com.jarvis.huddash.nav.LiveMapsNavSource
 import com.jarvis.huddash.nav.LiveNotificationsSource
 import com.jarvis.huddash.nav.MapsNavState
 import com.jarvis.huddash.nav.NotificationAccess
+import com.jarvis.huddash.nav.NotificationsFeedState
 import com.jarvis.huddash.panel.AppWindowPanelProvider
 import com.jarvis.huddash.panel.MediaPanelProvider
 import com.jarvis.huddash.panel.MediaSource
@@ -36,7 +38,9 @@ import com.jarvis.huddash.panel.NotificationsPanelProvider
 import com.jarvis.huddash.panel.PanelId
 import com.jarvis.huddash.panel.PanelProvider
 import com.jarvis.huddash.panel.TimePanelProvider
+import com.jarvis.huddash.render.ExpandedClickResult
 import com.jarvis.huddash.render.SpatialRingView
+import kotlin.math.hypot
 
 /**
  * Fullscreen-Activity DeX bootstrap (primary path per the design doc). If true
@@ -61,14 +65,31 @@ class MainActivity : Activity() {
     private val mockMediaSource: MediaSource = MockMediaSource()
     private val liveMediaSource: MediaSource by lazy { LiveMediaSource(this) }
     private var activeMediaSource: MediaSource = mockMediaSource
-    private val appWindowProvider: PanelProvider = AppWindowPanelProvider()
+    private val appWindowProvider: PanelProvider by lazy { AppWindowPanelProvider(this) }
     private val appWindowLauncher: AppWindowLauncher by lazy { AppWindowLauncher(this) }
     private var notificationAccessPrompted = false
     private var calendarAccessPrompted = false
 
+    /**
+     * True once a docked app window (YouTube/Instagram) has been launched. While true,
+     * we deliberately stop re-asserting our own immersive fullscreen on resume/focus —
+     * doing so re-maximizes Jarvis over the docked window and visually "puts it away"
+     * the moment focus returns to us, which is exactly the bug this flag exists to
+     * prevent. Cleared by the explicit flick-up dismiss gesture in [routeFlick].
+     */
+    private var appWindowActive = false
+
+    // Click detection: the trackpad has full button support (confirmed — a normal
+    // HID device, not just position). A click is ACTION_DOWN followed by ACTION_UP
+    // within a short duration and minimal movement; anything else (held longer, or
+    // moved further) is a drag, not a click, and shouldn't trigger click actions.
+    private var pointerDownTimestamp: Long = -1L
+    private var pointerDownX: Float = 0f
+    private var pointerDownY: Float = 0f
+
     private val watchdogTick = object : Runnable {
         override fun run() {
-            val now = android.os.SystemClock.uptimeMillis()
+            val now = SystemClock.uptimeMillis()
             inputController.onWatchdogTick(now)
             refreshPanelContents()
             pushStateToView()
@@ -90,7 +111,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        applyImmersiveFullscreen()
+        if (!appWindowActive) applyImmersiveFullscreen()
         watchdogHandler.post(watchdogTick)
         promptForNotificationAccessIfNeeded()
         promptForCalendarAccessIfNeeded()
@@ -138,7 +159,7 @@ class MainActivity : Activity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) applyImmersiveFullscreen()
+        if (hasFocus && !appWindowActive) applyImmersiveFullscreen()
     }
 
     /**
@@ -159,13 +180,24 @@ class MainActivity : Activity() {
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (isPointerSource(event) &&
-            (event.action == MotionEvent.ACTION_MOVE || event.action == MotionEvent.ACTION_DOWN)
-        ) {
-            handlePointerPosition(event)
-            return true
+        if (!isPointerSource(event)) return super.onTouchEvent(event)
+
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                handlePointerPosition(event)
+                pointerDownTimestamp = event.eventTime
+                pointerDownX = event.x
+                pointerDownY = event.y
+            }
+            MotionEvent.ACTION_MOVE -> handlePointerPosition(event)
+            MotionEvent.ACTION_UP -> {
+                handlePointerPosition(event)
+                maybeHandleClick(event)
+                pointerDownTimestamp = -1L
+            }
+            else -> return super.onTouchEvent(event)
         }
-        return super.onTouchEvent(event)
+        return true
     }
 
     private fun isPointerSource(event: MotionEvent): Boolean =
@@ -185,12 +217,81 @@ class MainActivity : Activity() {
     }
 
     /**
-     * Flick mapping while a panel is pinned — a first pass since the trackpad's
-     * physical-button capability isn't confirmed yet (design doc open question).
-     * Media: right/left skip next/previous, up/down toggle play/pause.
-     * App Window: right launches YouTube (horizontal), left launches Instagram
-     * (vertical); up/down unused. Retune once tested on real hardware; if the
-     * trackpad does have a button, prefer that over this flick heuristic.
+     * Click-vs-drag: elapsed time always gates it (a genuine drag/hold), but movement
+     * tolerance is more forgiving when down and up both land on the *same* expanded
+     * menu row — carefully aiming at a small menu target naturally causes more cursor
+     * drift between press and release than a quick tap on a large glowing ring panel
+     * does, and the flat pixel threshold was rejecting those as drags.
+     */
+    private fun maybeHandleClick(event: MotionEvent) {
+        if (pointerDownTimestamp < 0L) return
+        val elapsed = event.eventTime - pointerDownTimestamp
+        if (elapsed > CLICK_MAX_DURATION_MILLIS) return // held too long — a drag, not a click
+
+        val moved = hypot((event.x - pointerDownX).toDouble(), (event.y - pointerDownY).toDouble())
+        if (moved <= CLICK_MAX_MOVEMENT_PX) {
+            handleClick(event.x, event.y, event.eventTime)
+            return
+        }
+
+        val downHit = ringView.hitTestExpanded(pointerDownX, pointerDownY)
+        val upHit = ringView.hitTestExpanded(event.x, event.y)
+        if (downHit is ExpandedClickResult.ItemClicked && downHit == upHit) {
+            handleClick(event.x, event.y, event.eventTime)
+        }
+        // Otherwise: real drag outside any menu target — not a click, no action.
+    }
+
+    /**
+     * Click routing: menu-row selection first (App Window's YouTube/Instagram/Dismiss
+     * rows, checked via the renderer's hit-test in actual screen-pixel space), then
+     * ring-level pin/dismiss (checked via the trackpad-normalized offset InputController
+     * already works in) for everything else. A click outside a shown menu — even if
+     * it's still within the pinned panel's ring wedge — dismisses, matching "click off
+     * into dead space" for the menu case specifically.
+     */
+    private fun handleClick(screenX: Float, screenY: Float, timestampMillis: Long) {
+        when (val hit = ringView.hitTestExpanded(screenX, screenY)) {
+            is ExpandedClickResult.ItemClicked -> handleExpandedItemClick(hit.panel, hit.index)
+            is ExpandedClickResult.ClickedOutside -> inputController.dismiss()
+            null -> {
+                val halfDim = (minOf(ringView.width, ringView.height) / 2f).coerceAtLeast(1f)
+                val centerX = ringView.width / 2f
+                val centerY = ringView.height / 2f
+                val offsetX = ((screenX - centerX) / halfDim).coerceIn(-1f, 1f)
+                val offsetY = ((screenY - centerY) / halfDim).coerceIn(-1f, 1f)
+                inputController.onClick(offsetX, offsetY, timestampMillis)
+            }
+        }
+        pushStateToView()
+        refreshPanelContents()
+    }
+
+    private fun handleExpandedItemClick(panel: PanelId, index: Int) {
+        when (panel) {
+            PanelId.APP_WINDOW -> when (index) {
+                0 -> {
+                    appWindowLauncher.launchYouTubeHorizontal()
+                    appWindowActive = true
+                }
+                1 -> {
+                    appWindowLauncher.launchInstagramVertical()
+                    appWindowActive = true
+                }
+                2 -> restoreFullImmersiveHud()
+            }
+            else -> {} // Notification rows are informational only for now — no per-item action defined.
+        }
+    }
+
+    /**
+     * Flick mapping while a panel is pinned. Now that the trackpad's confirmed to have
+     * full button support, click is the primary interaction for pin/dismiss/menu
+     * selection (see [handleClick]) — flick remains Media's only control surface
+     * (transport controls have no menu UI) and stays as a redundant alternate path for
+     * App Window, which does have a menu now. Media: right/left skip next/previous,
+     * up/down toggle play/pause. App Window: right launches YouTube (horizontal), left
+     * launches Instagram (vertical), up dismisses and restores full HUD immersive mode.
      */
     private fun routeFlick() {
         val flick = inputController.pollFlick() ?: return
@@ -204,12 +305,26 @@ class MainActivity : Activity() {
                 refreshPanelContents() // snappier feedback than waiting for the next watchdog tick
             }
             PanelId.APP_WINDOW -> when (flick) {
-                FlickDirection.RIGHT -> appWindowLauncher.launchYouTubeHorizontal()
-                FlickDirection.LEFT -> appWindowLauncher.launchInstagramVertical()
-                FlickDirection.UP, FlickDirection.DOWN -> {}
+                FlickDirection.RIGHT -> {
+                    appWindowLauncher.launchYouTubeHorizontal()
+                    appWindowActive = true
+                }
+                FlickDirection.LEFT -> {
+                    appWindowLauncher.launchInstagramVertical()
+                    appWindowActive = true
+                }
+                FlickDirection.UP -> restoreFullImmersiveHud()
+                FlickDirection.DOWN -> {}
             }
             else -> {}
         }
+    }
+
+    /** We can't reach into the other app's task to close it — this just stops Jarvis
+     * ceding the full screen back to it, which is the part actually under our control. */
+    private fun restoreFullImmersiveHud() {
+        appWindowActive = false
+        applyImmersiveFullscreen()
     }
 
     private fun refreshPanelContents() {
@@ -229,14 +344,25 @@ class MainActivity : Activity() {
             PanelId.APP_WINDOW to appWindowProvider.getContent(),
         )
 
+        val ambient = mutableSetOf<PanelId>()
+
         // Nav stays visible for the whole active Maps session, not just while the
         // trackpad is pointed at it — only when we have a real signal to trust (live
         // source + Maps actually reporting an active route), never for the mock.
-        ringView.ambientPanels = if (navIsLive && MapsNavState.isActive) {
-            setOf(PanelId.NAV)
-        } else {
-            emptySet()
+        if (navIsLive && MapsNavState.isActive) ambient += PanelId.NAV
+
+        // Notifications flashes fully visible for a short window right after a
+        // genuinely new notification arrives ("light up and show it"), then reverts
+        // to normal gesture-only visibility — unlike Nav's steady ambient-for-the-
+        // whole-session behavior, this is a brief alert, not a persistent state.
+        if (navIsLive) {
+            val sinceLastNotification = SystemClock.elapsedRealtime() - NotificationsFeedState.lastNewNotificationAtMillis
+            if (sinceLastNotification in 0 until NOTIFICATION_ALERT_WINDOW_MILLIS) {
+                ambient += PanelId.NOTIFICATIONS
+            }
         }
+
+        ringView.ambientPanels = ambient
     }
 
     private fun pushStateToView() {
@@ -269,5 +395,8 @@ class MainActivity : Activity() {
     companion object {
         private const val WATCHDOG_INTERVAL_MILLIS = 250L
         private const val CALENDAR_PERMISSION_REQUEST_CODE = 1001
+        private const val CLICK_MAX_DURATION_MILLIS = 400L
+        private const val CLICK_MAX_MOVEMENT_PX = 30f
+        private const val NOTIFICATION_ALERT_WINDOW_MILLIS = 8_000L
     }
 }

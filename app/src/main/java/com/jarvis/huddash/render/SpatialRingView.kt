@@ -14,6 +14,21 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
+sealed class ExpandedClickResult {
+    data class ItemClicked(val panel: PanelId, val index: Int) : ExpandedClickResult()
+    data object ClickedOutside : ExpandedClickResult()
+}
+
+private data class ExpandedLayout(
+    val rect: RectF,
+    val headerHeight: Float,
+    val padding: Float,
+    val rowHeight: Float,
+    val iconSize: Int,
+    val textLeft: Float,
+    val textMaxWidth: Float,
+)
+
 /** Greedy word-wrap capped at [maxLines], with the final visible line ellipsized if the text overflows. */
 private fun wrapText(text: String, maxWidth: Float, paint: Paint, maxLines: Int): List<String> {
     if (text.isEmpty() || maxLines <= 0) return emptyList()
@@ -276,21 +291,31 @@ class SpatialRingView @JvmOverloads constructor(
         }
     }
 
+    /** Same geometry used by both drawing and click hit-testing — never compute this twice, they'd drift. */
+    private fun computeExpandedLayout(cx: Float, cy: Float, itemCount: Int): ExpandedLayout {
+        val boxWidth = width * 0.5f
+        val padding = baseRadiusPx * 0.3f
+        val iconSize = (baseRadiusPx * 0.5f).toInt()
+        val rowHeight = baseRadiusPx * 1.0f
+        val headerHeight = expandedHeaderPaint.textSize * 1.8f
+        val boxHeight = (headerHeight + padding * 2 + rowHeight * itemCount).coerceAtMost(height * 0.85f)
+
+        val rect = RectF(cx - boxWidth / 2f, cy - boxHeight / 2f, cx + boxWidth / 2f, cy + boxHeight / 2f)
+        val textLeft = rect.left + padding * 2 + iconSize
+        val textMaxWidth = rect.right - padding - textLeft
+
+        return ExpandedLayout(rect, headerHeight, padding, rowHeight, iconSize, textLeft, textMaxWidth)
+    }
+
     /**
      * "Full investigation" detail view for a pinned panel with [PanelContent.expandedItems] —
      * always centered on screen (not at the originating ring position) so it never clips
      * off-screen, since E/W panels sit near the display edges on the elliptical orbit.
      */
     private fun drawExpandedPanel(canvas: Canvas, cx: Float, cy: Float, headerTitle: String, items: List<PanelContent>) {
-        val boxWidth = width * 0.5f
-        val padding = baseRadiusPx * 0.3f
-        val iconSize = (baseRadiusPx * 0.5f).toInt()
-        val rowHeight = baseRadiusPx * 1.0f
-        val headerHeight = expandedHeaderPaint.textSize * 1.8f
-        val boxHeight = (headerHeight + padding * 2 + rowHeight * items.size).coerceAtMost(height * 0.85f)
-
-        val rect = RectF(cx - boxWidth / 2f, cy - boxHeight / 2f, cx + boxWidth / 2f, cy + boxHeight / 2f)
-        val corner = padding * 0.6f
+        val layout = computeExpandedLayout(cx, cy, items.size)
+        val rect = layout.rect
+        val corner = layout.padding * 0.6f
 
         expandedFillPaint.alpha = 170
         canvas.drawRoundRect(rect, corner, corner, expandedFillPaint)
@@ -301,17 +326,15 @@ class SpatialRingView @JvmOverloads constructor(
         canvas.drawRoundRect(rect, corner, corner, ringPaint)
 
         expandedHeaderPaint.alpha = 255
-        canvas.drawText(headerTitle.uppercase(), rect.left + padding, rect.top + padding + expandedHeaderPaint.textSize, expandedHeaderPaint)
+        canvas.drawText(headerTitle.uppercase(), rect.left + layout.padding, rect.top + layout.padding + expandedHeaderPaint.textSize, expandedHeaderPaint)
 
         if (items.isEmpty()) {
             expandedBodyPaint.alpha = 255
-            canvas.drawText("Nothing here", rect.left + padding, rect.top + headerHeight + padding + expandedBodyPaint.textSize, expandedBodyPaint)
+            canvas.drawText("Nothing here", rect.left + layout.padding, rect.top + layout.headerHeight + layout.padding + expandedBodyPaint.textSize, expandedBodyPaint)
             return
         }
 
-        val textLeft = rect.left + padding * 2 + iconSize
-        val textMaxWidth = rect.right - padding - textLeft
-        var rowY = rect.top + headerHeight + padding
+        var rowY = rect.top + layout.headerHeight + layout.padding
 
         expandedTitlePaint.alpha = 255
         expandedBodyPaint.alpha = 255
@@ -319,41 +342,66 @@ class SpatialRingView @JvmOverloads constructor(
         expandedDividerPaint.strokeWidth = 2f
 
         for ((index, item) in items.withIndex()) {
-            val iconTop = rowY + rowHeight * 0.08f
+            val iconTop = rowY + layout.rowHeight * 0.08f
             val icon = item.iconDrawable
             if (icon != null) {
                 icon.setBounds(
-                    (rect.left + padding).toInt(),
+                    (rect.left + layout.padding).toInt(),
                     iconTop.toInt(),
-                    (rect.left + padding + iconSize).toInt(),
-                    (iconTop + iconSize).toInt(),
+                    (rect.left + layout.padding + layout.iconSize).toInt(),
+                    (iconTop + layout.iconSize).toInt(),
                 )
                 icon.alpha = 255
                 icon.draw(canvas)
             } else {
-                canvas.drawText(item.glyph, rect.left + padding, iconTop + iconSize * 0.75f, expandedHeaderPaint)
+                canvas.drawText(item.glyph, rect.left + layout.padding, iconTop + layout.iconSize * 0.75f, expandedHeaderPaint)
             }
 
             var textY = rowY + expandedTitlePaint.textSize
-            canvas.drawText(item.title.uppercase(), textLeft, textY, expandedTitlePaint)
+            canvas.drawText(item.title.uppercase(), layout.textLeft, textY, expandedTitlePaint)
             textY += expandedTitlePaint.textSize * 1.2f
 
-            for (line in wrapText(item.primaryText, textMaxWidth, expandedBodyPaint, maxLines = 1)) {
-                canvas.drawText(line, textLeft, textY, expandedBodyPaint)
+            for (line in wrapText(item.primaryText, layout.textMaxWidth, expandedBodyPaint, maxLines = 1)) {
+                canvas.drawText(line, layout.textLeft, textY, expandedBodyPaint)
                 textY += expandedBodyPaint.textSize * 1.15f
             }
             item.secondaryText?.let { secondary ->
-                for (line in wrapText(secondary, textMaxWidth, expandedBodyPaint, maxLines = 1)) {
-                    canvas.drawText(line, textLeft, textY, expandedBodyPaint)
+                for (line in wrapText(secondary, layout.textMaxWidth, expandedBodyPaint, maxLines = 1)) {
+                    canvas.drawText(line, layout.textLeft, textY, expandedBodyPaint)
                     textY += expandedBodyPaint.textSize * 1.15f
                 }
             }
 
-            rowY += rowHeight
+            rowY += layout.rowHeight
             if (index != items.lastIndex) {
-                canvas.drawLine(rect.left + padding, rowY - rowHeight * 0.06f, rect.right - padding, rowY - rowHeight * 0.06f, expandedDividerPaint)
+                canvas.drawLine(rect.left + layout.padding, rowY - layout.rowHeight * 0.06f, rect.right - layout.padding, rowY - layout.rowHeight * 0.06f, expandedDividerPaint)
             }
         }
+    }
+
+    /**
+     * Hit-test a click against the currently-shown expanded menu, if any. Returns null
+     * when no panel is pinned-with-a-menu right now (caller should treat the click as a
+     * normal ring-level click instead — see MainActivity.handleClick).
+     */
+    fun hitTestExpanded(x: Float, y: Float): ExpandedClickResult? {
+        val panel = pinnedPanel ?: return null
+        val content = panelContents[panel] ?: return null
+        if (content.expandedItems.isEmpty()) return null
+
+        val centerX = width / 2f
+        val centerY = height / 2f
+        val layout = computeExpandedLayout(centerX, centerY, content.expandedItems.size)
+
+        if (!layout.rect.contains(x, y)) return ExpandedClickResult.ClickedOutside
+
+        val relativeY = y - (layout.rect.top + layout.headerHeight + layout.padding)
+        if (relativeY < 0f) return ExpandedClickResult.ClickedOutside // click landed on the header row
+
+        val index = (relativeY / layout.rowHeight).toInt()
+        if (index !in content.expandedItems.indices) return ExpandedClickResult.ClickedOutside
+
+        return ExpandedClickResult.ItemClicked(panel, index)
     }
 
     private fun drawProgressBar(canvas: Canvas, cx: Float, y: Float, halfWidth: Float, fraction: Float) {

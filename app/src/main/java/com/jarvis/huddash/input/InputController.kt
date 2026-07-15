@@ -74,6 +74,47 @@ class InputController(
     }
 
     /**
+     * A real click (button press+release) — instant action, not the hover dwell/flick
+     * heuristics used elsewhere in this class (those exist for continuous hover
+     * position; a click is a discrete, intentional event and doesn't need the same
+     * anti-accidental-trigger threshold). If unpinned and hovering within a panel's
+     * wedge (any magnitude past the dead zone counts — no 80% threshold required for
+     * a click), pins it instantly. If already pinned and the click isn't within that
+     * same panel's wedge, dismisses instantly. Per-row menu-item clicks are handled by
+     * the caller *before* reaching this (via the renderer's hit-test) — this only
+     * covers ring-level pin/dismiss.
+     *
+     * @return the panel pinned after this click, or null if nothing ended up pinned
+     */
+    fun onClick(offsetX: Float, offsetY: Float, timestampMillis: Long): PanelId? {
+        lastInputTimestamp = timestampMillis
+        val magnitude = min(1f, hypot(offsetX, offsetY))
+        val angleDegrees = clockAngleDegrees(offsetX, offsetY)
+        val reveals = panels.associateWith { panel ->
+            angularWeight(angleDegrees, panel.clockAngleDegrees) * magnitudeWeight(magnitude)
+        }
+        val hovered = reveals.maxByOrNull { it.value }?.takeIf { it.value > 0f }?.key
+
+        val currentPin = pinnedPanel()
+        if (currentPin != null) {
+            if (hovered != currentPin) decayToNeutral()
+            return pinnedPanel()
+        }
+
+        if (hovered != null) {
+            state = RingState.Pinned(hovered)
+            pinCandidate = null
+            resetFlickTracking()
+        }
+        return pinnedPanel()
+    }
+
+    /** Force-dismiss regardless of current position — e.g. a click landing outside a pinned panel's expanded menu. */
+    fun dismiss() {
+        decayToNeutral()
+    }
+
+    /**
      * @param offsetX normalized displacement, [-1, 1], positive = right
      * @param offsetY normalized displacement, [-1, 1], positive = down (screen coords)
      */

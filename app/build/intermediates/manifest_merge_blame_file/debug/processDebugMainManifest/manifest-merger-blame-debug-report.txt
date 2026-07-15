@@ -86,8 +86,8 @@
 54-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:35:13-55
 55            android:exported="true"
 55-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:36:13-36
-56            android:label="HUD Dash Nav Relay"
-56-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:37:13-47
+56            android:label="Jarvis Nav Relay"
+56-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:37:13-45
 57            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" >
 57-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:38:13-87
 58            <intent-filter>
