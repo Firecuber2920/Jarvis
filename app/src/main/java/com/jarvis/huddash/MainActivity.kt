@@ -14,6 +14,7 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.widget.Toast
+import com.jarvis.huddash.appwindow.AppWindowLauncher
 import com.jarvis.huddash.calendar.CalendarAccess
 import com.jarvis.huddash.calendar.LiveCalendarSource
 import com.jarvis.huddash.input.FlickDirection
@@ -23,6 +24,7 @@ import com.jarvis.huddash.nav.LiveMapsNavSource
 import com.jarvis.huddash.nav.LiveNotificationsSource
 import com.jarvis.huddash.nav.MapsNavState
 import com.jarvis.huddash.nav.NotificationAccess
+import com.jarvis.huddash.panel.AppWindowPanelProvider
 import com.jarvis.huddash.panel.MediaPanelProvider
 import com.jarvis.huddash.panel.MediaSource
 import com.jarvis.huddash.panel.MockCalendarSource
@@ -59,6 +61,8 @@ class MainActivity : Activity() {
     private val mockMediaSource: MediaSource = MockMediaSource()
     private val liveMediaSource: MediaSource by lazy { LiveMediaSource(this) }
     private var activeMediaSource: MediaSource = mockMediaSource
+    private val appWindowProvider: PanelProvider = AppWindowPanelProvider()
+    private val appWindowLauncher: AppWindowLauncher by lazy { AppWindowLauncher(this) }
     private var notificationAccessPrompted = false
     private var calendarAccessPrompted = false
 
@@ -177,25 +181,35 @@ class MainActivity : Activity() {
 
         inputController.onPositionChanged(offsetX, offsetY, event.eventTime)
         pushStateToView()
-        routeFlickToMediaControls()
+        routeFlick()
     }
 
     /**
-     * Flick mapping while the Media panel is pinned — a first pass since the
-     * trackpad's physical-button capability isn't confirmed yet (design doc open
-     * question). Right/left skip next/previous, up/down toggle play/pause. Retune
-     * once tested on real hardware; if the trackpad does have a button, prefer that
-     * for pin/unpin-adjacent controls over this flick heuristic.
+     * Flick mapping while a panel is pinned — a first pass since the trackpad's
+     * physical-button capability isn't confirmed yet (design doc open question).
+     * Media: right/left skip next/previous, up/down toggle play/pause.
+     * App Window: right launches YouTube (horizontal), left launches Instagram
+     * (vertical); up/down unused. Retune once tested on real hardware; if the
+     * trackpad does have a button, prefer that over this flick heuristic.
      */
-    private fun routeFlickToMediaControls() {
+    private fun routeFlick() {
         val flick = inputController.pollFlick() ?: return
-        if (inputController.pinnedPanel() != PanelId.MEDIA) return
-        when (flick) {
-            FlickDirection.RIGHT -> activeMediaSource.skipNext()
-            FlickDirection.LEFT -> activeMediaSource.skipPrevious()
-            FlickDirection.UP, FlickDirection.DOWN -> activeMediaSource.playPause()
+        when (inputController.pinnedPanel()) {
+            PanelId.MEDIA -> {
+                when (flick) {
+                    FlickDirection.RIGHT -> activeMediaSource.skipNext()
+                    FlickDirection.LEFT -> activeMediaSource.skipPrevious()
+                    FlickDirection.UP, FlickDirection.DOWN -> activeMediaSource.playPause()
+                }
+                refreshPanelContents() // snappier feedback than waiting for the next watchdog tick
+            }
+            PanelId.APP_WINDOW -> when (flick) {
+                FlickDirection.RIGHT -> appWindowLauncher.launchYouTubeHorizontal()
+                FlickDirection.LEFT -> appWindowLauncher.launchInstagramVertical()
+                FlickDirection.UP, FlickDirection.DOWN -> {}
+            }
+            else -> {}
         }
-        refreshPanelContents() // snappier feedback than waiting for the next watchdog tick
     }
 
     private fun refreshPanelContents() {
@@ -212,6 +226,7 @@ class MainActivity : Activity() {
             PanelId.NOTIFICATIONS to notificationsProvider.getContent(),
             PanelId.NAV to navProvider.getContent(),
             PanelId.MEDIA to MediaPanelProvider(activeMediaSource).getContent(),
+            PanelId.APP_WINDOW to appWindowProvider.getContent(),
         )
 
         // Nav stays visible for the whole active Maps session, not just while the

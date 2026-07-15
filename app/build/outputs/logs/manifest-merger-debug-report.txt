@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:2:1-36:12
-INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:2:1-36:12
-INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:2:1-36:12
-INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:2:1-36:12
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:2:1-45:12
+INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:2:1-45:12
+INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:2:1-45:12
+INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:2:1-45:12
 MERGED from [androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:17:1-30:12
 MERGED from [androidx.core:core-ktx:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\f1a09bdffbe6d9b68f8bd05ed25861a4\workspace\transformed\core-ktx-1.13.1\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.annotation:annotation-experimental:1.4.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\a9fdd03bf7c8fe7d39416a20593801f1\workspace\transformed\annotation-experimental-1.4.0\AndroidManifest.xml:2:1-7:12
@@ -26,9 +26,19 @@ uses-permission#android.permission.READ_CALENDAR
 ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:4:5-72
 	android:name
 		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:4:22-69
+queries
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:10:5-13:15
+package#com.google.android.youtube
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:11:9-62
+	android:name
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:11:18-59
+package#com.instagram.android
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:12:9-57
+	android:name
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:12:18-54
 application
-ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:6:5-34:19
-INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:6:5-34:19
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:15:5-43:19
+INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:15:5-43:19
 MERGED from [androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:28:5-89
 MERGED from [androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:28:5-89
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\8424875ed7a1d0fcf6fbcd39b2ea4506\workspace\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
@@ -42,53 +52,53 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\Addis\.gradle\cach
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:10:9-35
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:19:9-35
 	android:label
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:8:9-41
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:17:9-41
 	android:allowBackup
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:7:9-36
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:16:9-36
 	android:theme
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:9:9-45
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:18:9-45
 activity#com.jarvis.huddash.MainActivity
-ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:12:9-23:20
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:21:9-32:20
 	android:launchMode
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:15:13-44
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:24:13-44
 	android:exported
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:14:13-36
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:23:13-36
 	android:resizeableActivity
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:17:13-46
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:26:13-46
 	android:configChanges
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:16:13-121
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:25:13-121
 	android:theme
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:18:13-49
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:27:13-49
 	android:name
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:13:13-41
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:22:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:19:13-22:29
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:28:13-31:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:20:17-69
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:29:17-69
 	android:name
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:20:25-66
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:29:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:21:17-77
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:30:17-77
 	android:name
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:21:27-74
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:30:27-74
 service#com.jarvis.huddash.nav.MapsNavListenerService
-ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:25:9-33:19
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:34:9-42:19
 	android:label
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:28:13-47
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:37:13-47
 	android:exported
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:27:13-36
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:36:13-36
 	android:permission
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:29:13-87
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:38:13-87
 	android:name
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:26:13-55
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:35:13-55
 intent-filter#action:name:android.service.notification.NotificationListenerService
-ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:30:13-32:29
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:39:13-41:29
 action#android.service.notification.NotificationListenerService
-ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:31:17-99
+ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:40:17-99
 	android:name
-		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:31:25-96
+		ADDED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:40:25-96
 uses-sdk
 INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml

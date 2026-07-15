@@ -9,11 +9,17 @@ import kotlin.math.min
 enum class FlickDirection { LEFT, RIGHT, UP, DOWN }
 
 /**
- * Pure state machine driving the peek/pin/unpin mechanic, plus flick-gesture
+ * Pure state machine driving the peek/pin/switch/dismiss mechanic, plus flick-gesture
  * detection for controlling a pinned panel (e.g. media transport controls). Takes a
  * normalized displacement vector (x, y in [-1, 1], relative to the trackpad's own
  * center) and a timestamp, and produces per-panel reveal weights, pin state, and
  * pending flick events.
+ *
+ * Pin lifecycle: nudge into a panel's wedge past [pinThresholdFraction] and hold for
+ * [pinHoldMillis] to pin it. While pinned, nudging into a *different* panel's wedge
+ * past the same threshold/hold switches the pin directly — no separate dismiss step.
+ * Returning to the center dead zone dismisses the pin immediately (no dwell), unless
+ * it completes a flick (a fast out-and-back), which the pin survives.
  *
  * Deliberately has no Android/MotionEvent dependency so it's unit-testable with
  * plain JUnit — the MainActivity input adapter is responsible for converting
@@ -25,7 +31,6 @@ class InputController(
     private val deadZoneFraction: Float = 0.15f,
     private val pinThresholdFraction: Float = 0.80f,
     private val pinHoldMillis: Long = 400L,
-    private val unpinHoldMillis: Long = 500L,
     private val staleTimeoutMillis: Long = 1500L,
     private val flickThreshold: Float = 0.6f,
     private val flickMaxDurationMillis: Long = 350L,
@@ -43,7 +48,6 @@ class InputController(
 
     private var pinCandidate: PanelId? = null
     private var pinCandidateStartMillis: Long = 0L
-    private var unpinCandidateStartMillis: Long = -1L
 
     private var flickTrackingActive: Boolean = false
     private var flickStartMillis: Long = 0L
@@ -76,24 +80,26 @@ class InputController(
     fun onPositionChanged(offsetX: Float, offsetY: Float, timestampMillis: Long) {
         lastInputTimestamp = timestampMillis
         val magnitude = min(1f, hypot(offsetX, offsetY))
-
-        val currentPin = pinnedPanel()
-        if (currentPin != null) {
-            handlePinnedInput(offsetX, offsetY, magnitude, timestampMillis)
-            return
-        }
-
         val angleDegrees = clockAngleDegrees(offsetX, offsetY)
         val reveals = panels.associateWith { panel ->
             angularWeight(angleDegrees, panel.clockAngleDegrees) * magnitudeWeight(magnitude)
         }
-        state = RingState.Revealing(reveals)
-        unpinCandidateStartMillis = -1L
 
+        if (pinnedPanel() != null) {
+            handlePinnedInput(offsetX, offsetY, magnitude, reveals, timestampMillis)
+            return
+        }
+
+        state = RingState.Revealing(reveals)
         evaluatePinCandidate(reveals, timestampMillis)
     }
 
-    /** Call periodically (e.g. every 250ms) so staleness is detected even without new input. */
+    /**
+     * Call periodically (e.g. every 250ms) so staleness is detected even without new
+     * input — e.g. the trackpad going silent (disconnect, or the hand simply lifting
+     * off) de-emphasizes whatever's showing, complementing the instant dead-space
+     * dismiss above (that one requires an actual center touch; this one requires none).
+     */
     fun onWatchdogTick(nowMillis: Long) {
         if (lastInputTimestamp == 0L) return
         val isIdle = (state as? RingState.Revealing)?.reveals?.values?.all { it == 0f } == true
@@ -102,43 +108,54 @@ class InputController(
         }
     }
 
-    private fun handlePinnedInput(offsetX: Float, offsetY: Float, magnitude: Float, timestampMillis: Long) {
+    private fun handlePinnedInput(
+        offsetX: Float,
+        offsetY: Float,
+        magnitude: Float,
+        reveals: Map<PanelId, Float>,
+        timestampMillis: Long,
+    ) {
         if (magnitude <= deadZoneFraction) {
-            // A quick out-and-back within the flick window completes a flick, distinct
-            // from the sustained center-hold that unpins — the two can't collide since
-            // a flick requires having left the dead zone first.
-            if (flickTrackingActive &&
+            // A quick out-and-back within the flick window completes a flick — the pin
+            // survives. Anything else touching center (a deliberate release, "clicking
+            // off into dead space") dismisses immediately, no dwell required.
+            val isValidFlick = flickTrackingActive &&
                 timestampMillis - flickStartMillis <= flickMaxDurationMillis &&
                 flickPeakMagnitude >= flickThreshold
-            ) {
+
+            if (isValidFlick) {
                 pendingFlick = directionFromVector(flickPeakX, flickPeakY)
-            }
-            resetFlickTracking()
-
-            if (unpinCandidateStartMillis < 0L) {
-                unpinCandidateStartMillis = timestampMillis
-            } else if (timestampMillis - unpinCandidateStartMillis >= unpinHoldMillis) {
-                decayToNeutral()
-            }
-        } else {
-            unpinCandidateStartMillis = -1L
-
-            if (!flickTrackingActive) {
-                flickTrackingActive = true
-                flickStartMillis = timestampMillis
-                flickPeakMagnitude = 0f
-            }
-            if (magnitude > flickPeakMagnitude) {
-                flickPeakMagnitude = magnitude
-                flickPeakX = offsetX
-                flickPeakY = offsetY
-            }
-            // Sustained displacement past the flick window without returning to center
-            // isn't a flick (and isn't an unpin either, since it's not at center) — drop it.
-            if (timestampMillis - flickStartMillis > flickMaxDurationMillis) {
                 resetFlickTracking()
+                pinCandidate = null
+                return
             }
+
+            resetFlickTracking()
+            decayToNeutral()
+            return
         }
+
+        if (!flickTrackingActive) {
+            flickTrackingActive = true
+            flickStartMillis = timestampMillis
+            flickPeakMagnitude = 0f
+        }
+        if (magnitude > flickPeakMagnitude) {
+            flickPeakMagnitude = magnitude
+            flickPeakX = offsetX
+            flickPeakY = offsetY
+        }
+        // Sustained displacement past the flick window without returning to center
+        // isn't a flick — drop the tracking (it's not a dead-zone touch either, so no
+        // dismiss happens here; only switching-panel evaluation applies below).
+        if (timestampMillis - flickStartMillis > flickMaxDurationMillis) {
+            resetFlickTracking()
+        }
+
+        // Nudging into a different panel's wedge switches the pin directly — same
+        // hold-duration gate as the original pin, so switching isn't accidentally
+        // easier (or harder) to trigger than pinning was in the first place.
+        evaluatePinCandidate(reveals, timestampMillis)
     }
 
     private fun resetFlickTracking() {
@@ -156,7 +173,7 @@ class InputController(
     private fun evaluatePinCandidate(reveals: Map<PanelId, Float>, timestampMillis: Long) {
         val topPanel = reveals.maxByOrNull { it.value }?.takeIf { it.value >= pinThresholdFraction }?.key
 
-        if (topPanel == null) {
+        if (topPanel == null || topPanel == pinnedPanel()) {
             pinCandidate = null
             return
         }
@@ -176,7 +193,6 @@ class InputController(
     private fun decayToNeutral() {
         state = RingState.Revealing(panels.associateWith { 0f })
         pinCandidate = null
-        unpinCandidateStartMillis = -1L
         resetFlickTracking()
     }
 

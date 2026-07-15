@@ -7,18 +7,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Unit tests for the InputController state machine, per the design doc's Test Plan:
- * dead-zone boundary, pin threshold boundary, unpin-only-via-long-press, stale-input
- * timeout, reconnect, and flick-gesture detection for pinned-panel controls. No
- * Android instrumentation needed — pure logic.
+ * Unit tests for the InputController state machine, per the design doc's Test Plan
+ * plus later revisions: dead-zone boundary, pin threshold boundary, instant dismiss
+ * on dead-space touch, instant switch to a different panel, stale-input timeout,
+ * reconnect, and flick-gesture detection for pinned-panel controls. No Android
+ * instrumentation needed — pure logic.
  */
 class InputControllerTest {
 
-    // Exact unit vectors toward each panel's clock-angle center (N/E/S/W, magnitude 1.0).
-    private val towardTime = 0f to -1f            // 0°
-    private val towardNotifications = 1f to 0f    // 90°
-    private val towardNav = 0f to 1f              // 180°
-    private val towardMedia = -1f to 0f           // 270°
+    // Exact unit vectors toward each panel's clock-angle center (18/90/162/234/306°, magnitude 1.0).
+    private val towardTime = 0.3090170f to -0.9510565f       // 18°
+    private val towardAppWindow = 1f to 0f                    // 90°
+    private val towardMedia = 0.3090170f to 0.9510565f        // 162°
+    private val towardNav = -0.8090170f to 0.5877853f         // 234°
+    private val towardNotifications = -0.8090170f to -0.5877853f // 306°
 
     @Test
     fun deadZone_belowThreshold_producesNoReveal() {
@@ -66,42 +68,54 @@ class InputControllerTest {
         assertNull(controller.pinnedPanel())
     }
 
-    @Test
-    fun unpin_requiresExplicitLongPressAtCenter_releaseAloneIsNotEnough() {
-        val controller = InputController()
-        val (dx, dy) = towardTime
+    private fun pin(controller: InputController, vector: Pair<Float, Float>, startMillis: Long = 1000L): Long {
+        val (dx, dy) = vector
+        controller.onPositionChanged(dx, dy, startMillis)
+        controller.onPositionChanged(dx, dy, startMillis + 400L)
+        return startMillis + 400L
+    }
 
-        controller.onPositionChanged(dx, dy, 1000L)
-        controller.onPositionChanged(dx, dy, 1400L)
+    @Test
+    fun dismiss_touchingDeadSpaceWhilePinned_unpinsImmediately_noDwellRequired() {
+        val controller = InputController()
+        val pinnedAt = pin(controller, towardTime)
         assertEquals(PanelId.TIME, controller.pinnedPanel())
 
-        // Single low-magnitude sample right after pinning: not yet a sustained long-press.
-        controller.onPositionChanged(0f, 0f, 1450L)
-        assertEquals(
-            "a brief return to center should not immediately unpin",
-            PanelId.TIME,
-            controller.pinnedPanel(),
-        )
-
-        // Sustained center hold for the full unpin duration.
-        controller.onPositionChanged(0f, 0f, 1450L + 500L)
+        // A single center touch — no sustained dwell needed — dismisses right away.
+        controller.onPositionChanged(0f, 0f, pinnedAt + 50L)
         assertNull(controller.pinnedPanel())
     }
 
     @Test
-    fun unpin_browsingTowardAnotherPanelWhilePinned_doesNotDismissThePin() {
+    fun switch_nudgingTowardAnotherPanelLongEnough_switchesThePinDirectly() {
         val controller = InputController()
-        val (timeDx, timeDy) = towardTime
-        val (notifDx, notifDy) = towardNotifications
-
-        controller.onPositionChanged(timeDx, timeDy, 1000L)
-        controller.onPositionChanged(timeDx, timeDy, 1400L)
+        val pinnedAt = pin(controller, towardTime)
         assertEquals(PanelId.TIME, controller.pinnedPanel())
 
-        // Nudging toward a different panel while pinned must NOT switch or dismiss the pin —
-        // this is the exact contradiction the eng review caught in the design doc.
-        controller.onPositionChanged(notifDx, notifDy, 1500L)
-        assertEquals(PanelId.TIME, controller.pinnedPanel())
+        // Nudge toward Media and hold for the same pin duration — switches directly,
+        // no separate dismiss step needed first.
+        val (mediaDx, mediaDy) = towardMedia
+        controller.onPositionChanged(mediaDx, mediaDy, pinnedAt + 100L)
+        controller.onPositionChanged(mediaDx, mediaDy, pinnedAt + 100L + 400L)
+
+        assertEquals(PanelId.MEDIA, controller.pinnedPanel())
+    }
+
+    @Test
+    fun switch_brieflyNudgingTowardAnotherPanel_doesNotSwitchUntilHoldCompletes() {
+        val controller = InputController()
+        val pinnedAt = pin(controller, towardTime)
+
+        // Only a brief nudge toward Media — well under the 400ms hold.
+        val (mediaDx, mediaDy) = towardMedia
+        controller.onPositionChanged(mediaDx, mediaDy, pinnedAt + 100L)
+        controller.onPositionChanged(mediaDx, mediaDy, pinnedAt + 100L + 100L)
+
+        assertEquals(
+            "should not switch before the hold duration completes",
+            PanelId.TIME,
+            controller.pinnedPanel(),
+        )
     }
 
     @Test
@@ -141,32 +155,25 @@ class InputControllerTest {
         assertTrue((controller.currentReveals()[PanelId.NAV] ?: 0f) > 0f)
     }
 
-    private fun pinMedia(controller: InputController, startMillis: Long = 1000L): Long {
-        val (dx, dy) = towardMedia
-        controller.onPositionChanged(dx, dy, startMillis)
-        controller.onPositionChanged(dx, dy, startMillis + 400L)
-        assertEquals(PanelId.MEDIA, controller.pinnedPanel())
-        return startMillis + 400L
-    }
-
     @Test
-    fun flick_quickOutAndBackWhilePinned_reportsDirection() {
+    fun flick_quickOutAndBackWhilePinned_reportsDirectionAndSurvivesThePin() {
         val controller = InputController()
-        val pinnedAt = pinMedia(controller)
+        val pinnedAt = pin(controller, towardMedia)
+        assertEquals(PanelId.MEDIA, controller.pinnedPanel())
 
         // Flick right: out past the flick threshold, then back to center, well within 350ms.
         controller.onPositionChanged(0.8f, 0f, pinnedAt + 50L)
         controller.onPositionChanged(0f, 0f, pinnedAt + 120L)
 
         assertEquals(FlickDirection.RIGHT, controller.pollFlick())
-        // Pin must survive a flick — it's a control gesture, not an unpin attempt.
+        // A completed flick is not a dead-space dismiss — the pin must survive it.
         assertEquals(PanelId.MEDIA, controller.pinnedPanel())
     }
 
     @Test
     fun flick_pollFlick_clearsAfterReading() {
         val controller = InputController()
-        val pinnedAt = pinMedia(controller)
+        val pinnedAt = pin(controller, towardMedia)
 
         controller.onPositionChanged(0f, -0.8f, pinnedAt + 50L) // flick up
         controller.onPositionChanged(0f, 0f, pinnedAt + 120L)
@@ -176,28 +183,32 @@ class InputControllerTest {
     }
 
     @Test
-    fun flick_tooSlowToCountAsFlick_producesNoFlickAndDoesNotUnpinEither() {
+    fun flick_tooSlowToCountAsFlick_dismissesInsteadSinceItEndsAtCenter() {
         val controller = InputController()
-        val pinnedAt = pinMedia(controller)
+        val pinnedAt = pin(controller, towardMedia)
 
-        // Displacement held out past the flick window (350ms) without returning to
-        // center — not a flick (too slow) and not at center either, so no unpin.
+        // Displacement held out past the flick window (350ms), then released to
+        // center — too slow to count as a flick, so the center touch that follows
+        // is treated as a dismiss (consistent with "any non-flick center touch dismisses").
         controller.onPositionChanged(0.8f, 0f, pinnedAt + 50L)
         controller.onPositionChanged(0.8f, 0f, pinnedAt + 500L)
+        controller.onPositionChanged(0f, 0f, pinnedAt + 550L)
 
         assertNull(controller.pollFlick())
-        assertEquals(PanelId.MEDIA, controller.pinnedPanel())
+        assertNull(controller.pinnedPanel())
     }
 
     @Test
-    fun flick_belowThreshold_producesNoFlick() {
+    fun flick_belowThreshold_producesNoFlickAndDismissesOnReturnToCenter() {
         val controller = InputController()
-        val pinnedAt = pinMedia(controller)
+        val pinnedAt = pin(controller, towardMedia)
 
-        // Out-and-back, but peak magnitude never crosses the 0.6 flick threshold.
+        // Out-and-back, but peak magnitude never crosses the 0.6 flick threshold —
+        // not a flick, so the return to center dismisses as normal.
         controller.onPositionChanged(0.3f, 0f, pinnedAt + 50L)
         controller.onPositionChanged(0f, 0f, pinnedAt + 100L)
 
         assertNull(controller.pollFlick())
+        assertNull(controller.pinnedPanel())
     }
 }

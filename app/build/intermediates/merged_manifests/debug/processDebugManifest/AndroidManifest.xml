@@ -10,6 +10,17 @@
 
     <uses-permission android:name="android.permission.READ_CALENDAR" />
 
+    <!--
+         API 30+ package visibility: needed for getLaunchIntentForPackage to resolve
+         these apps at all. Notification/media-session lookups elsewhere don't need
+         this — the OS auto-grants visibility for apps that interact with an enabled
+         notification listener, which is a separate implicit exemption.
+    -->
+    <queries>
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.instagram.android" />
+    </queries>
+
     <permission
         android:name="com.jarvis.huddash.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
         android:protectionLevel="signature" />

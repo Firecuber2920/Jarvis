@@ -25,12 +25,17 @@ data class PanelContent(
     val expandedItems: List<PanelContent> = emptyList(),
 )
 
-/** Angular position around the ring — evenly spaced, N/E/S/W on a 4-panel ring. */
+/**
+ * Angular position around the ring — evenly spaced (72° apart, 5 panels).
+ * APP_WINDOW is pinned to exactly 90° (true right) per its "right peripheral vision"
+ * requirement; the other four fall out at 72° increments from there.
+ */
 enum class PanelId(val clockAngleDegrees: Float) {
-    TIME(0f),
-    NOTIFICATIONS(90f),
-    NAV(180f),
-    MEDIA(270f),
+    TIME(18f),
+    APP_WINDOW(90f),
+    MEDIA(162f),
+    NAV(234f),
+    NOTIFICATIONS(306f),
 }
 
 fun interface PanelProvider {

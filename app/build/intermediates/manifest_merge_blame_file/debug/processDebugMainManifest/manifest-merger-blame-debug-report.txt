@@ -12,129 +12,145 @@
 11-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:4:5-72
 11-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:4:22-69
 12
-13    <permission
-13-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
-14        android:name="com.jarvis.huddash.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-14-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
-15        android:protectionLevel="signature" />
-15-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
-16
-17    <uses-permission android:name="com.jarvis.huddash.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-17-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
-17-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
-18
-19    <application
-19-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:6:5-34:19
-20        android:allowBackup="false"
-20-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:7:9-36
-21        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-21-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
-22        android:debuggable="true"
-23        android:extractNativeLibs="false"
-24        android:label="@string/app_name"
-24-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:8:9-41
-25        android:supportsRtl="true"
-25-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:10:9-35
-26        android:testOnly="true"
-27        android:theme="@style/Theme.HudDash" >
-27-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:9:9-45
-28        <activity
-28-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:12:9-23:20
-29            android:name="com.jarvis.huddash.MainActivity"
-29-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:13:13-41
-30            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|smallestScreenSize|density"
-30-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:16:13-121
-31            android:exported="true"
-31-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:14:13-36
-32            android:launchMode="singleTask"
-32-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:15:13-44
-33            android:resizeableActivity="true"
-33-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:17:13-46
-34            android:theme="@style/Theme.HudDash" >
-34-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:18:13-49
-35            <intent-filter>
-35-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:19:13-22:29
-36                <action android:name="android.intent.action.MAIN" />
-36-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:20:17-69
-36-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:20:25-66
-37
-38                <category android:name="android.intent.category.LAUNCHER" />
-38-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:21:17-77
-38-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:21:27-74
-39            </intent-filter>
-40        </activity>
-41
-42        <service
-42-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:25:9-33:19
-43            android:name="com.jarvis.huddash.nav.MapsNavListenerService"
-43-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:26:13-55
-44            android:exported="true"
-44-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:27:13-36
-45            android:label="HUD Dash Nav Relay"
-45-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:28:13-47
-46            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" >
-46-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:29:13-87
-47            <intent-filter>
-47-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:30:13-32:29
-48                <action android:name="android.service.notification.NotificationListenerService" />
-48-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:31:17-99
-48-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:31:25-96
-49            </intent-filter>
-50        </service>
-51
-52        <provider
-52-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:24:9-32:20
-53            android:name="androidx.startup.InitializationProvider"
-53-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:25:13-67
-54            android:authorities="com.jarvis.huddash.androidx-startup"
-54-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:26:13-68
-55            android:exported="false" >
-55-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:27:13-37
-56            <meta-data
-56-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
-57                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-57-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
-58                android:value="androidx.startup" />
-58-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
-59        </provider>
-60
-61        <receiver
-61-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
-62            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-62-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
-63            android:directBootAware="false"
-63-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
-64            android:enabled="true"
-64-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
-65            android:exported="true"
-65-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
-66            android:permission="android.permission.DUMP" >
-66-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
-67            <intent-filter>
-67-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
-68                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-68-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
-68-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
-69            </intent-filter>
-70            <intent-filter>
-70-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
-71                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-71-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
-71-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
-72            </intent-filter>
-73            <intent-filter>
-73-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
-74                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-74-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
-74-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
-75            </intent-filter>
-76            <intent-filter>
-76-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
-77                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-77-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
-77-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:25-92
-78            </intent-filter>
-79        </receiver>
-80    </application>
-81
-82</manifest>
+13    <!--
+14         API 30+ package visibility: needed for getLaunchIntentForPackage to resolve
+15         these apps at all. Notification/media-session lookups elsewhere don't need
+16         this — the OS auto-grants visibility for apps that interact with an enabled
+17         notification listener, which is a separate implicit exemption.
+18    -->
+19    <queries>
+19-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:10:5-13:15
+20        <package android:name="com.google.android.youtube" />
+20-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:11:9-62
+20-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:11:18-59
+21        <package android:name="com.instagram.android" />
+21-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:12:9-57
+21-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:12:18-54
+22    </queries>
+23
+24    <permission
+24-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
+25        android:name="com.jarvis.huddash.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+25-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
+26        android:protectionLevel="signature" />
+26-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
+27
+28    <uses-permission android:name="com.jarvis.huddash.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+28-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
+28-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
+29
+30    <application
+30-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:15:5-43:19
+31        android:allowBackup="false"
+31-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:16:9-36
+32        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+32-->[androidx.core:core:1.13.1] C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
+33        android:debuggable="true"
+34        android:extractNativeLibs="false"
+35        android:label="@string/app_name"
+35-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:17:9-41
+36        android:supportsRtl="true"
+36-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:19:9-35
+37        android:testOnly="true"
+38        android:theme="@style/Theme.HudDash" >
+38-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:18:9-45
+39        <activity
+39-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:21:9-32:20
+40            android:name="com.jarvis.huddash.MainActivity"
+40-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:22:13-41
+41            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|smallestScreenSize|density"
+41-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:25:13-121
+42            android:exported="true"
+42-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:23:13-36
+43            android:launchMode="singleTask"
+43-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:24:13-44
+44            android:resizeableActivity="true"
+44-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:26:13-46
+45            android:theme="@style/Theme.HudDash" >
+45-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:27:13-49
+46            <intent-filter>
+46-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:28:13-31:29
+47                <action android:name="android.intent.action.MAIN" />
+47-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:29:17-69
+47-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:29:25-66
+48
+49                <category android:name="android.intent.category.LAUNCHER" />
+49-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:30:17-77
+49-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:30:27-74
+50            </intent-filter>
+51        </activity>
+52
+53        <service
+53-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:34:9-42:19
+54            android:name="com.jarvis.huddash.nav.MapsNavListenerService"
+54-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:35:13-55
+55            android:exported="true"
+55-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:36:13-36
+56            android:label="HUD Dash Nav Relay"
+56-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:37:13-47
+57            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" >
+57-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:38:13-87
+58            <intent-filter>
+58-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:39:13-41:29
+59                <action android:name="android.service.notification.NotificationListenerService" />
+59-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:40:17-99
+59-->C:\Users\Addis\Documents\Jarvis\app\src\main\AndroidManifest.xml:40:25-96
+60            </intent-filter>
+61        </service>
+62
+63        <provider
+63-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:24:9-32:20
+64            android:name="androidx.startup.InitializationProvider"
+64-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:25:13-67
+65            android:authorities="com.jarvis.huddash.androidx-startup"
+65-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:26:13-68
+66            android:exported="false" >
+66-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:27:13-37
+67            <meta-data
+67-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
+68                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+68-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
+69                android:value="androidx.startup" />
+69-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
+70        </provider>
+71
+72        <receiver
+72-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
+73            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+73-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
+74            android:directBootAware="false"
+74-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
+75            android:enabled="true"
+75-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
+76            android:exported="true"
+76-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
+77            android:permission="android.permission.DUMP" >
+77-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
+78            <intent-filter>
+78-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
+79                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+79-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
+79-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
+80            </intent-filter>
+81            <intent-filter>
+81-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
+82                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+82-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
+82-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
+83            </intent-filter>
+84            <intent-filter>
+84-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
+85                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+85-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
+85-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
+86            </intent-filter>
+87            <intent-filter>
+87-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
+88                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+88-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
+88-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:25-92
+89            </intent-filter>
+90        </receiver>
+91    </application>
+92
+93</manifest>
