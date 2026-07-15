@@ -1,0 +1,14 @@
+com.jarvis.huddash.app-core-1.13.1-0 C:\Users\Addis\.gradle\caches\9.3.0\transforms\3bf01a71410f13de0de29a97f965d874\workspace\transformed\core-1.13.1\res
+com.jarvis.huddash.app-lifecycle-runtime-2.6.2-1 C:\Users\Addis\.gradle\caches\9.3.0\transforms\4bd92615df2e030f34b4d69e26b38192\workspace\transformed\lifecycle-runtime-2.6.2\res
+com.jarvis.huddash.app-profileinstaller-1.3.0-2 C:\Users\Addis\.gradle\caches\9.3.0\transforms\62cebe0e2bffa9698990d38fd066a428\workspace\transformed\profileinstaller-1.3.0\res
+com.jarvis.huddash.app-core-runtime-2.2.0-3 C:\Users\Addis\.gradle\caches\9.3.0\transforms\69a428ee159d89b006ac97232c6e7f78\workspace\transformed\core-runtime-2.2.0\res
+com.jarvis.huddash.app-annotation-experimental-1.4.0-4 C:\Users\Addis\.gradle\caches\9.3.0\transforms\a9fdd03bf7c8fe7d39416a20593801f1\workspace\transformed\annotation-experimental-1.4.0\res
+com.jarvis.huddash.app-startup-runtime-1.1.1-5 C:\Users\Addis\.gradle\caches\9.3.0\transforms\dfefaa380a82463bd598508527ca63e4\workspace\transformed\startup-runtime-1.1.1\res
+com.jarvis.huddash.app-core-ktx-1.13.1-6 C:\Users\Addis\.gradle\caches\9.3.0\transforms\f1a09bdffbe6d9b68f8bd05ed25861a4\workspace\transformed\core-ktx-1.13.1\res
+com.jarvis.huddash.app-pngs-7 C:\Users\Addis\Documents\Jarvis\app\build\generated\res\pngs\debug
+com.jarvis.huddash.app-resValues-8 C:\Users\Addis\Documents\Jarvis\app\build\generated\res\resValues\debug
+com.jarvis.huddash.app-packageDebugResources-9 C:\Users\Addis\Documents\Jarvis\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.jarvis.huddash.app-packageDebugResources-10 C:\Users\Addis\Documents\Jarvis\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.jarvis.huddash.app-debug-11 C:\Users\Addis\Documents\Jarvis\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.jarvis.huddash.app-debug-12 C:\Users\Addis\Documents\Jarvis\app\src\debug\res
+com.jarvis.huddash.app-main-13 C:\Users\Addis\Documents\Jarvis\app\src\main\res

@@ -1,0 +1,201 @@
+package com.jarvis.huddash.input
+
+import com.jarvis.huddash.panel.PanelId
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.hypot
+import kotlin.math.min
+
+enum class FlickDirection { LEFT, RIGHT, UP, DOWN }
+
+/**
+ * Pure state machine driving the peek/pin/unpin mechanic, plus flick-gesture
+ * detection for controlling a pinned panel (e.g. media transport controls). Takes a
+ * normalized displacement vector (x, y in [-1, 1], relative to the trackpad's own
+ * center) and a timestamp, and produces per-panel reveal weights, pin state, and
+ * pending flick events.
+ *
+ * Deliberately has no Android/MotionEvent dependency so it's unit-testable with
+ * plain JUnit — the MainActivity input adapter is responsible for converting
+ * whatever the trackpad's actual HID reports turn out to be (absolute position vs.
+ * accumulated relative deltas — confirmed on real hardware in Derisk session 1)
+ * into this normalized offset.
+ */
+class InputController(
+    private val deadZoneFraction: Float = 0.15f,
+    private val pinThresholdFraction: Float = 0.80f,
+    private val pinHoldMillis: Long = 400L,
+    private val unpinHoldMillis: Long = 500L,
+    private val staleTimeoutMillis: Long = 1500L,
+    private val flickThreshold: Float = 0.6f,
+    private val flickMaxDurationMillis: Long = 350L,
+    private val panels: List<PanelId> = PanelId.entries,
+    /** Half-wedge width in degrees; defaults so panels' wedges exactly tile the circle regardless of panel count. */
+    private val panelHalfWidthDegrees: Float = 180f / panels.size,
+) {
+    sealed class RingState {
+        data class Revealing(val reveals: Map<PanelId, Float>) : RingState()
+        data class Pinned(val panelId: PanelId) : RingState()
+    }
+
+    private var state: RingState = RingState.Revealing(panels.associateWith { 0f })
+    private var lastInputTimestamp: Long = 0L
+
+    private var pinCandidate: PanelId? = null
+    private var pinCandidateStartMillis: Long = 0L
+    private var unpinCandidateStartMillis: Long = -1L
+
+    private var flickTrackingActive: Boolean = false
+    private var flickStartMillis: Long = 0L
+    private var flickPeakMagnitude: Float = 0f
+    private var flickPeakX: Float = 0f
+    private var flickPeakY: Float = 0f
+    private var pendingFlick: FlickDirection? = null
+
+    fun currentState(): RingState = state
+
+    /** Reveal weight per panel — 1.0 for a pinned panel, 0.0 for every other panel while pinned. */
+    fun currentReveals(): Map<PanelId, Float> = when (val s = state) {
+        is RingState.Revealing -> s.reveals
+        is RingState.Pinned -> panels.associateWith { if (it == s.panelId) 1f else 0f }
+    }
+
+    fun pinnedPanel(): PanelId? = (state as? RingState.Pinned)?.panelId
+
+    /** Returns and clears any pending flick — only produced while a panel is pinned. Poll once per tick. */
+    fun pollFlick(): FlickDirection? {
+        val flick = pendingFlick
+        pendingFlick = null
+        return flick
+    }
+
+    /**
+     * @param offsetX normalized displacement, [-1, 1], positive = right
+     * @param offsetY normalized displacement, [-1, 1], positive = down (screen coords)
+     */
+    fun onPositionChanged(offsetX: Float, offsetY: Float, timestampMillis: Long) {
+        lastInputTimestamp = timestampMillis
+        val magnitude = min(1f, hypot(offsetX, offsetY))
+
+        val currentPin = pinnedPanel()
+        if (currentPin != null) {
+            handlePinnedInput(offsetX, offsetY, magnitude, timestampMillis)
+            return
+        }
+
+        val angleDegrees = clockAngleDegrees(offsetX, offsetY)
+        val reveals = panels.associateWith { panel ->
+            angularWeight(angleDegrees, panel.clockAngleDegrees) * magnitudeWeight(magnitude)
+        }
+        state = RingState.Revealing(reveals)
+        unpinCandidateStartMillis = -1L
+
+        evaluatePinCandidate(reveals, timestampMillis)
+    }
+
+    /** Call periodically (e.g. every 250ms) so staleness is detected even without new input. */
+    fun onWatchdogTick(nowMillis: Long) {
+        if (lastInputTimestamp == 0L) return
+        val isIdle = (state as? RingState.Revealing)?.reveals?.values?.all { it == 0f } == true
+        if (!isIdle && nowMillis - lastInputTimestamp > staleTimeoutMillis) {
+            decayToNeutral()
+        }
+    }
+
+    private fun handlePinnedInput(offsetX: Float, offsetY: Float, magnitude: Float, timestampMillis: Long) {
+        if (magnitude <= deadZoneFraction) {
+            // A quick out-and-back within the flick window completes a flick, distinct
+            // from the sustained center-hold that unpins — the two can't collide since
+            // a flick requires having left the dead zone first.
+            if (flickTrackingActive &&
+                timestampMillis - flickStartMillis <= flickMaxDurationMillis &&
+                flickPeakMagnitude >= flickThreshold
+            ) {
+                pendingFlick = directionFromVector(flickPeakX, flickPeakY)
+            }
+            resetFlickTracking()
+
+            if (unpinCandidateStartMillis < 0L) {
+                unpinCandidateStartMillis = timestampMillis
+            } else if (timestampMillis - unpinCandidateStartMillis >= unpinHoldMillis) {
+                decayToNeutral()
+            }
+        } else {
+            unpinCandidateStartMillis = -1L
+
+            if (!flickTrackingActive) {
+                flickTrackingActive = true
+                flickStartMillis = timestampMillis
+                flickPeakMagnitude = 0f
+            }
+            if (magnitude > flickPeakMagnitude) {
+                flickPeakMagnitude = magnitude
+                flickPeakX = offsetX
+                flickPeakY = offsetY
+            }
+            // Sustained displacement past the flick window without returning to center
+            // isn't a flick (and isn't an unpin either, since it's not at center) — drop it.
+            if (timestampMillis - flickStartMillis > flickMaxDurationMillis) {
+                resetFlickTracking()
+            }
+        }
+    }
+
+    private fun resetFlickTracking() {
+        flickTrackingActive = false
+        flickPeakMagnitude = 0f
+    }
+
+    private fun directionFromVector(x: Float, y: Float): FlickDirection = when {
+        abs(x) >= abs(y) && x >= 0f -> FlickDirection.RIGHT
+        abs(x) >= abs(y) -> FlickDirection.LEFT
+        y < 0f -> FlickDirection.UP
+        else -> FlickDirection.DOWN
+    }
+
+    private fun evaluatePinCandidate(reveals: Map<PanelId, Float>, timestampMillis: Long) {
+        val topPanel = reveals.maxByOrNull { it.value }?.takeIf { it.value >= pinThresholdFraction }?.key
+
+        if (topPanel == null) {
+            pinCandidate = null
+            return
+        }
+
+        if (pinCandidate != topPanel) {
+            pinCandidate = topPanel
+            pinCandidateStartMillis = timestampMillis
+            return
+        }
+
+        if (timestampMillis - pinCandidateStartMillis >= pinHoldMillis) {
+            state = RingState.Pinned(topPanel)
+            pinCandidate = null
+        }
+    }
+
+    private fun decayToNeutral() {
+        state = RingState.Revealing(panels.associateWith { 0f })
+        pinCandidate = null
+        unpinCandidateStartMillis = -1L
+        resetFlickTracking()
+    }
+
+    private fun magnitudeWeight(magnitude: Float): Float =
+        ((magnitude - deadZoneFraction) / (1f - deadZoneFraction)).coerceIn(0f, 1f)
+
+    private fun angularWeight(inputAngle: Float, panelAngle: Float): Float {
+        val distance = circularDistanceDegrees(inputAngle, panelAngle)
+        return (1f - distance / panelHalfWidthDegrees).coerceIn(0f, 1f)
+    }
+
+    private fun circularDistanceDegrees(a: Float, b: Float): Float {
+        val diff = abs(a - b) % 360f
+        return if (diff > 180f) 360f - diff else diff
+    }
+
+    /** 0° = up (12 o'clock), increasing clockwise — matches [PanelId.clockAngleDegrees]. */
+    private fun clockAngleDegrees(offsetX: Float, offsetY: Float): Float {
+        val degrees = Math.toDegrees(atan2(offsetX.toDouble(), -offsetY.toDouble())).toFloat()
+        return (degrees + 360f) % 360f
+    }
+}

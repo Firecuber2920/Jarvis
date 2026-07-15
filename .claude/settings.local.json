@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(command -v codex)",
+      "Read(//c/Users/Addis/.claude/skills/office-hours/sections/**)",
+      "Read(//c/Users/Addis/**)"
+    ]
+  }
+}
