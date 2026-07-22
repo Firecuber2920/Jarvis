@@ -122,9 +122,11 @@ h1, h2 {
 }
 
 /* reserved aspect-ratio boxes: prevent layout shift while images load,
-   and read as intentional (not broken) if a photo is ever missing */
+   and read as intentional (not broken) if a photo is ever missing.
+   Matches the source screenshots' actual ratio (2335x1315, ~16:9) so
+   cover doesn't need to crop the HUD corner brackets off the edges. */
 .media-box {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   border: 1px solid var(--cyan-dim);
   border-radius: 4px;
   overflow: hidden;
@@ -133,13 +135,7 @@ h1, h2 {
   align-items: center;
   justify-content: center;
 }
-/* cover, with object-position targeting the ring's actual vertical position:
-   the source screenshots are tall portrait on-glass captures (1080x2316)
-   much narrower than the display box, so cover only crops vertically --
-   object-position picks which vertical band (the ring) survives the crop. */
 .media-box img { width: 100%; height: 100%; object-fit: cover; }
-.media-box img.notifications-shot { object-position: 50% 29%; }
-.media-box img.time-shot { object-position: 50% 18%; }
 .media-box.placeholder {
   color: var(--text-dim);
   font-size: 13px;
