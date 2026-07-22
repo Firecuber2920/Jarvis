@@ -1,0 +1,262 @@
+/* Design tokens ported directly from the on-glass HUD screenshots
+   (Photos for Claude/Screenshot_20260715_*.jpg): pure black background,
+   cyan neon ring glow, corner-bracket "viewfinder" framing, monospace labels. */
+:root {
+  --bg: #000000;
+  --cyan: #4de8f0;
+  --cyan-dim: #2aa9af;
+  --cyan-glow: rgba(77, 232, 240, 0.55);
+  --text: #eafcfd;
+  --text-dim: #86c3c6;
+  --border-dim: #113;
+  --bracket-size: 26px;
+  --bracket-thickness: 2px;
+  --max-width: 960px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Courier New', ui-monospace, monospace;
+  line-height: 1.6;
+  font-size: 17px;
+}
+
+img { max-width: 100%; display: block; }
+
+a { color: var(--cyan); }
+a:visited { color: var(--cyan-dim); }
+
+section {
+  padding: 96px 24px;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+h1, h2 {
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+/* ---------- corner-bracket "viewfinder" motif ---------- */
+/* Shared by the ring frames (hero + ring-reveal) AND the How-It-Works
+   steps below, so the whole page reads as one visual system instead of
+   mixing the brand motif with a generic card pattern. */
+.bracket-frame {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto;
+}
+.bracket-frame.small { width: 130px; height: 130px; }
+
+.bracket-frame .corner {
+  content: '';
+  position: absolute;
+  width: var(--bracket-size);
+  height: var(--bracket-size);
+  border: var(--bracket-thickness) solid var(--cyan);
+  filter: drop-shadow(0 0 6px var(--cyan-glow));
+}
+.bracket-frame.small .corner { width: 18px; height: 18px; }
+.bracket-frame .corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+.bracket-frame .corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+.bracket-frame .corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+.bracket-frame .corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+.ring {
+  position: absolute;
+  top: 10px; left: 10px; right: 10px; bottom: 10px;
+  border: 1.5px solid var(--cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 20px var(--cyan-glow), inset 0 0 20px rgba(77, 232, 240, 0.2);
+}
+.ring-inner {
+  position: absolute;
+  top: 30px; left: 30px; right: 30px; bottom: 30px;
+  border: 1px solid var(--cyan-dim);
+  border-radius: 50%;
+}
+.ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 0 12px;
+}
+.ring-label .kicker { font-size: 11px; letter-spacing: 2px; color: var(--cyan-dim); }
+.ring-label .title { font-size: 15px; color: var(--text); margin-top: 4px; }
+
+/* ---------- hero ---------- */
+.hero { text-align: center; padding-top: 120px; }
+.hero h1 {
+  font-size: 44px;
+  color: var(--cyan);
+  text-shadow: 0 0 14px var(--cyan-glow);
+  margin-bottom: 8px;
+}
+.hero .premise {
+  color: var(--text-dim);
+  max-width: 560px;
+  margin: 16px auto 48px;
+  font-size: 16px;
+}
+.hero figure { margin: 0; }
+.hero figcaption {
+  font-size: 11px;
+  color: #446;
+  margin-top: 12px;
+}
+
+/* reserved aspect-ratio boxes: prevent layout shift while images load,
+   and read as intentional (not broken) if a photo is ever missing */
+.media-box {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--cyan-dim);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* cover, with object-position targeting the ring's actual vertical position:
+   the source screenshots are tall portrait on-glass captures (1080x2316)
+   much narrower than the display box, so cover only crops vertically --
+   object-position picks which vertical band (the ring) survives the crop. */
+.media-box img { width: 100%; height: 100%; object-fit: cover; }
+.media-box img.notifications-shot { object-position: 50% 29%; }
+.media-box img.time-shot { object-position: 50% 18%; }
+.media-box.placeholder {
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+}
+
+/* ---------- split-screen: input (trackpad) -> output (glasses) ---------- */
+.split {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+  margin-top: 24px;
+}
+.split > div { flex: 1; }
+.split .cap {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--cyan-dim);
+  margin-bottom: 12px;
+}
+
+/* mobile: stack vertically, trackpad (input) on top, glasses (output) below --
+   preserves the input -> output reading order per the design doc */
+@media (max-width: 640px) {
+  .split { flex-direction: column; }
+}
+
+/* ---------- ring-reveal (scroll-linked) ---------- */
+.stops {
+  display: flex;
+  flex-direction: column;
+  gap: 100px;
+  margin-top: 60px;
+}
+.stop {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.stop.is-visible { opacity: 1; transform: translateY(0); }
+
+/* Reduced-motion: show every stop statically, no animation at all */
+@media (prefers-reduced-motion: reduce) {
+  .stop { opacity: 1; transform: none; transition: none; }
+}
+
+.stop .num {
+  font-size: 12px;
+  color: var(--cyan-dim);
+  letter-spacing: 2px;
+  min-width: 160px;
+}
+
+/* Native CSS scroll-timeline path (Chromium). Progressively enhances the
+   IntersectionObserver fallback below -- if the browser doesn't support
+   scroll-timeline, this rule simply never applies and JS handles it. */
+@supports (animation-timeline: view()) {
+  .stop {
+    animation: reveal-stop linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+  @keyframes reveal-stop {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+@supports (animation-timeline: view()) and (prefers-reduced-motion: reduce) {
+  .stop { animation: none; opacity: 1; transform: none; }
+}
+
+/* ---------- how it works: corner-bracket numbered steps,
+   NOT a colored-left-border card (flagged as an AI-slop pattern in review) ---------- */
+.howto {
+  display: flex;
+  gap: 24px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.howto .step {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+  padding: 20px 16px;
+}
+.howto .step .corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: var(--bracket-thickness) solid var(--cyan);
+}
+.howto .step .corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+.howto .step .corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+.howto .step-num {
+  color: var(--cyan);
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+/* ---------- footer ---------- */
+footer {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-dim);
+  font-size: 13px;
+  border-top: 1px solid var(--border-dim);
+}
+
+.section-heading {
+  color: var(--cyan);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.section-sub {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 0;
+}

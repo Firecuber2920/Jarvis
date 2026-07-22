@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jarvis — HUD interaction system for XReal glasses</title>
+<meta name="description" content="Jarvis is a custom Android app driving XReal HUD glasses over Samsung DeX via a custom HID trackpad -- glanceable panels revealed proportionally as you move.">
+
+<!-- OG tags for LinkedIn / portfolio link previews -->
+<meta property="og:title" content="Jarvis — HUD interaction system for XReal glasses">
+<meta property="og:description" content="A custom Android app driving XReal HUD glasses over Samsung DeX via a custom HID trackpad -- glanceable panels revealed proportionally as you move.">
+<meta property="og:image" content="images/hero-time-panel.jpg">
+<meta property="og:type" content="website">
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- HERO: 3-second view -- product name, one real on-glass ring capture,
+     one-line premise. Nothing else competes for attention here. -->
+<section class="hero">
+  <h1>JARVIS</h1>
+  <p class="premise">
+    A heads-up interaction system for XReal glasses, driven by a custom HID
+    trackpad — glanceable panels revealed proportionally as you move.
+  </p>
+  <figure>
+    <div class="bracket-frame">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="ring"></div>
+      <div class="ring-inner"></div>
+      <div class="ring-label">
+        <div class="kicker">NEXT</div>
+        <div class="title">Physical Making…</div>
+      </div>
+    </div>
+    <figcaption>real on-glass capture — not a mockup</figcaption>
+  </figure>
+</section>
+
+<!-- SPLIT-SCREEN: input -> output. Proves the interaction is real. -->
+<section>
+  <h2 class="section-heading">INPUT → OUTPUT</h2>
+  <p class="section-sub">move the trackpad, watch the HUD respond</p>
+  <div class="split">
+    <div>
+      <div class="cap">INPUT — TRACKPAD</div>
+      <div class="media-box placeholder">
+        [ photo: hand on custom HID trackpad — to be added ]
+      </div>
+    </div>
+    <div>
+      <div class="cap">OUTPUT — GLASSES</div>
+      <div class="media-box">
+        <img src="images/notifications-panel.jpg" class="notifications-shot"
+             alt="On-glass HUD capture: a cyan ring labeled NOTIFICATIONS with a Samsung DeX notification shown inside it">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RING REVEAL: scroll-linked, one stop per panel type. The "whoa" --
+     the page's own interaction demonstrates the product's interaction model. -->
+<section>
+  <h2 class="section-heading">THE RING</h2>
+  <p class="section-sub">scroll to see each panel reveal, the same way the trackpad reveals it on-glass</p>
+  <div class="stops">
+    <div class="stop">
+      <div class="num">01 / TIME</div>
+      <div class="bracket-frame small">
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="ring"></div>
+        <img src="images/hero-time-panel.jpg" alt="On-glass HUD capture: a cyan ring showing the next calendar event, Physical Making, in 10 hours 6 minutes" style="position:absolute;inset:10px;border-radius:50%;object-fit:cover;object-position:50% 18%;width:calc(100% - 20px);height:calc(100% - 20px);">
+      </div>
+    </div>
+    <div class="stop">
+      <div class="num">02 / NOTIFICATIONS</div>
+      <div class="bracket-frame small">
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="ring"></div>
+        <img src="images/notifications-panel.jpg" alt="On-glass HUD capture: a cyan ring labeled NOTIFICATIONS with a Samsung DeX notification shown inside it" style="position:absolute;inset:10px;border-radius:50%;object-fit:cover;object-position:50% 29%;width:calc(100% - 20px);height:calc(100% - 20px);">
+      </div>
+    </div>
+    <div class="stop">
+      <div class="num">03 / NAV</div>
+      <!-- No real photo yet -- SVG ring diagram placeholder per the design
+           doc's Interaction States table, instead of a blank gap. -->
+      <div class="bracket-frame small">
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="ring"></div>
+        <div class="ring-inner"></div>
+        <div class="ring-label"><div class="kicker">NAV</div></div>
+      </div>
+    </div>
+    <div class="stop">
+      <div class="num">04 / MEDIA</div>
+      <div class="bracket-frame small">
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="ring"></div>
+        <div class="ring-inner"></div>
+        <div class="ring-label"><div class="kicker">MEDIA</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS: corner-bracket motif, not a colored-left-border card
+     (flagged in design review as an AI-slop pattern). -->
+<section>
+  <h2 class="section-heading">HOW IT WORKS</h2>
+  <div class="howto">
+    <div class="step">
+      <div class="corner tl"></div><div class="corner br"></div>
+      <div class="step-num">01</div>
+      Move your thumb across the trackpad.
+    </div>
+    <div class="step">
+      <div class="corner tl"></div><div class="corner br"></div>
+      <div class="step-num">02</div>
+      Panels reveal proportionally to position.
+    </div>
+    <div class="step">
+      <div class="corner tl"></div><div class="corner br"></div>
+      <div class="step-num">03</div>
+      Hold or click to pin a panel open.
+    </div>
+  </div>
+</section>
+
+<footer>
+  Built solo for the Cornell Tech Milstein Program —
+  <a href="https://github.com/Firecuber2920/Jarvis">GitHub</a>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
