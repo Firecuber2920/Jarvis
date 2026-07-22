@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.jarvis.huddash.panel.NavInstruction
 import com.jarvis.huddash.panel.NavSource
@@ -79,9 +80,7 @@ class MapsNavListenerService : NotificationListenerService() {
         if (sbn.packageName == packageName) return // never show our own notifications
         if (isMediaNotification(sbn)) return // Media panel already covers this data
 
-        val extras = sbn.notification.extras
-        val title = extras.getCharSequence("android.title")?.toString().orEmpty()
-        val text = extras.getCharSequence("android.text")?.toString().orEmpty()
+        val (title, text, subText) = extractDisplayFields(sbn.notification)
         if (title.isBlank() && text.isBlank()) return
 
         val isNew = NotificationsFeedState.entries.none { it.key == sbn.key }
@@ -93,6 +92,7 @@ class MapsNavListenerService : NotificationListenerService() {
             title = title,
             text = text,
             postedAtMillis = sbn.postTime,
+            subText = subText,
         )
 
         NotificationsFeedState.entries = (
@@ -102,6 +102,38 @@ class MapsNavListenerService : NotificationListenerService() {
         if (isLiveEvent && isNew) {
             NotificationsFeedState.lastNewNotificationAtMillis = SystemClock.elapsedRealtime()
         }
+    }
+
+    /**
+     * Plain android.title/android.text are only the collapsed, truncated preview — the
+     * same fields the system uses before a notification is expanded. Samsung's own
+     * handler pulls the richer expanded/conversation data instead, which is why it
+     * reads as more informative: bigText (full expanded body) beats a truncated text
+     * preview, and MessagingStyle notifications (chat apps) carry the real content —
+     * who sent the latest message and what it said — in EXTRA_MESSAGES, not android.text
+     * at all (that field is often just a stale "X new messages" summary).
+     */
+    private fun extractDisplayFields(notification: Notification): Triple<String, String, String?> {
+        val extras = notification.extras
+        val plainTitle = extras.getCharSequence("android.title")?.toString().orEmpty()
+        val plainText = extras.getCharSequence("android.text")?.toString().orEmpty()
+        val bigText = extras.getCharSequence("android.bigText")?.toString()
+        val subText = extras.getCharSequence("android.subText")?.toString()
+            ?: extras.getCharSequence("android.summaryText")?.toString()
+
+        val latestMessage = NotificationCompat.MessagingStyle
+            .extractMessagingStyleFromNotification(notification)
+            ?.messages
+            ?.lastOrNull()
+
+        val senderName = latestMessage?.person?.name?.toString()
+        val title = senderName?.takeIf { it.isNotBlank() } ?: plainTitle
+        val text = when {
+            latestMessage != null -> latestMessage.text?.toString().orEmpty()
+            !bigText.isNullOrBlank() -> bigText
+            else -> plainText
+        }
+        return Triple(title, text, subText)
     }
 
     /** Standard Android signals for "this is a media transport notification," not a guess. */

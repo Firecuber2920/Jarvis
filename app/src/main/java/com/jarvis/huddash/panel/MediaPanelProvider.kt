@@ -20,7 +20,11 @@ data class MediaState(
 interface MediaSource {
     /** Null when nothing is actively playing/paused in any known session. */
     fun currentMedia(): MediaState?
+    /** Toggle, used by the flick gesture (no menu UI to show separate Play/Pause targets). */
     fun playPause()
+    /** Explicit play/pause, used by the click menu's separate Play and Pause rows. */
+    fun play()
+    fun pause()
     fun skipNext()
     fun skipPrevious()
 }
@@ -48,6 +52,9 @@ class MockMediaSource(
         if (playing) pausedAtPositionMillis = currentMedia().positionMillis
         playing = !playing
     }
+
+    override fun play() { if (!playing) playPause() }
+    override fun pause() { if (playing) playPause() }
 
     override fun skipNext() { /* no-op for the mock — nothing to skip to */ }
     override fun skipPrevious() { /* no-op for the mock — nothing to skip to */ }
@@ -78,6 +85,15 @@ class MediaPanelProvider(
             glyph = if (media.isPlaying) "⏸" else "▶",
             progressFraction = progress,
             iconDrawable = media.sourceAppIcon,
+            // Inline controls within the same widget (enlarged while pinned), not a
+            // separate menu takeover — the live title/artist/progress stays visible
+            // right above the buttons. Play/Pause collapses to one state-reflecting
+            // toggle rather than two rows, since only one is ever a valid action.
+            actions = listOf(
+                PanelAction(glyph = "⏮", label = "Back"),
+                PanelAction(glyph = if (media.isPlaying) "⏸" else "▶", label = if (media.isPlaying) "Pause" else "Play"),
+                PanelAction(glyph = "⏭", label = "Skip"),
+            ),
         )
     }
 }

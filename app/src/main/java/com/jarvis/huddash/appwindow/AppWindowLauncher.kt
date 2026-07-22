@@ -8,6 +8,7 @@ import android.widget.Toast
 
 private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
 private const val INSTAGRAM_PACKAGE = "com.instagram.android"
+private const val SPOTIFY_PACKAGE = "com.spotify.music"
 
 /**
  * Launches a real installed app in a bounded window docked to the right side of the
@@ -34,6 +35,9 @@ class AppWindowLauncher(private val activity: Activity) {
     fun launchYouTubeHorizontal() = launch(YOUTUBE_PACKAGE, landscapeBounds())
 
     fun launchInstagramVertical() = launch(INSTAGRAM_PACKAGE, portraitBounds())
+
+    /** Spotify's own UI is portrait/phone-shaped like Instagram's — reuses the same docked box. */
+    fun launchSpotifyVertical() = launch(SPOTIFY_PACKAGE, portraitBounds())
 
     private fun launch(packageName: String, bounds: Rect) {
         val intent = activity.packageManager.getLaunchIntentForPackage(packageName)

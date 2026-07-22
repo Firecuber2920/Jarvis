@@ -29,6 +29,26 @@ private data class ExpandedLayout(
     val textMaxWidth: Float,
 )
 
+/** Geometry for a pinned panel's own (possibly enlarged) widget — shared by drawing and action hit-testing so they can never drift apart. */
+private data class PinnedContentLayout(
+    val px: Float,
+    val py: Float,
+    val radius: Float,
+    val maxTextWidth: Float,
+    val iconCenterY: Float,
+    val titleY: Float,
+    val primaryStartY: Float,
+    val primaryLines: List<String>,
+    val secondaryStartY: Float,
+    val secondaryLines: List<String>,
+    val detailStartY: Float,
+    val detailLines: List<String>,
+    val progressY: Float,
+    val contentBottom: Float,
+    val actionsRowY: Float,
+    val actionButtons: List<RectF>,
+)
+
 /** Greedy word-wrap capped at [maxLines], with the final visible line ellipsized if the text overflows. */
 private fun wrapText(text: String, maxWidth: Float, paint: Paint, maxLines: Int): List<String> {
     if (text.isEmpty() || maxLines <= 0) return emptyList()
@@ -94,6 +114,10 @@ class SpatialRingView @JvmOverloads constructor(
         set(value) { field = value; invalidate() }
 
     var pinnedPanel: PanelId? = null
+        set(value) { field = value; invalidate() }
+
+    /** Wear-test telemetry summary (see MainActivity/DebugTelemetry) — null hides the overlay. */
+    var debugOverlayText: String? = null
         set(value) { field = value; invalidate() }
 
     init {
@@ -166,12 +190,39 @@ class SpatialRingView @JvmOverloads constructor(
         textAlign = Paint.Align.LEFT
         typeface = Typeface.MONOSPACE
     }
+    private val debugPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        textAlign = Paint.Align.LEFT
+        typeface = Typeface.MONOSPACE
+    }
+    // Separate from glyphPaint so drawing an enlarged action-button glyph never needs to
+    // mutate-then-restore the shared compact glyph size used by every other panel.
+    private val actionGlyphPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = glowColor
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.MONOSPACE
+    }
 
     // Smaller panels, elliptical orbit: wide horizontally (landscape screen has the
     // room), tighter vertically (bounded by the shorter dimension).
     private val baseRadiusPx get() = min(width, height) * 0.11f
     private val orbitRadiusXPx get() = width * 0.42f
     private val orbitRadiusYPx get() = height * 0.34f
+
+    /** How much a pinned panel with inline extras (actions/detail lines) grows over its compact size. */
+    private val enlargedRadiusMultiplier = 1.7f
+
+    /**
+     * Per-panel pixel nudge (fraction of width/height) applied on top of the normal
+     * angle-based orbit position — purely a draw-position adjustment for panels that
+     * were clipping against a screen edge. Deliberately NOT applied to the gesture
+     * wedge math in InputController, which still targets the panel's true
+     * [PanelId.clockAngleDegrees] — only where the widget visually renders shifts.
+     */
+    private val panelPositionBias: Map<PanelId, Pair<Float, Float>> = mapOf(
+        PanelId.TIME to (0.07f to 0f),   // right
+        PanelId.MEDIA to (0f to -0.07f), // up
+    )
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -187,6 +238,7 @@ class SpatialRingView @JvmOverloads constructor(
         expandedHeaderPaint.textSize = baseRadiusPx * 0.26f
         expandedTitlePaint.textSize = baseRadiusPx * 0.22f
         expandedBodyPaint.textSize = baseRadiusPx * 0.20f
+        debugPaint.textSize = baseRadiusPx * 0.18f
 
         // Expanded ("full investigation") view draws last so it sits on top of any
         // other still-visible compact panels, and is drawn centered/full-size — the
@@ -205,29 +257,115 @@ class SpatialRingView @JvmOverloads constructor(
                 expanded = content to panel
                 continue
             }
-            drawPanel(canvas, centerX, centerY, panel, content, effectiveReveal, isPinned)
+            drawPanel(canvas, panel, content, effectiveReveal, isPinned)
         }
 
         expanded?.let { (content, _) ->
             drawExpandedPanel(canvas, centerX, centerY, content.title, content.expandedItems)
         }
+
+        debugOverlayText?.let { text ->
+            debugPaint.alpha = 220
+            canvas.drawText(text, baseRadiusPx * 0.2f, baseRadiusPx * 0.4f, debugPaint)
+        }
+    }
+
+    /**
+     * Shared geometry for a panel's own widget — same function drives both [drawPanel]
+     * and [hitTestPinnedActions], so the action buttons drawn on screen and the regions
+     * that respond to clicks can never drift apart (same discipline as [computeExpandedLayout]).
+     * When pinned with inline extras ([PanelContent.actions] or [PanelContent.pinnedDetailLines]),
+     * the widget enlarges to fit — it stays the same widget, just bigger, rather than
+     * being replaced by a separate menu box.
+     */
+    private fun computePinnedContentLayout(panel: PanelId, content: PanelContent, reveal: Float, isPinned: Boolean): PinnedContentLayout {
+        val centerX = width / 2f
+        val centerY = height / 2f
+        val angleRad = Math.toRadians(panel.clockAngleDegrees.toDouble())
+        // Panels drift in from slightly further out along the orbit as they're
+        // revealed, settling into their true position once fully shown (or pinned) —
+        // real motion on top of the existing opacity/scale reveal, not just a fade.
+        val orbitMultiplier = 1f + (1f - if (isPinned) 1f else reveal) * 0.18f
+        val bias = panelPositionBias[panel]
+        val px = centerX + orbitRadiusXPx * orbitMultiplier * sin(angleRad).toFloat() + (bias?.first ?: 0f) * width
+        val py = centerY - orbitRadiusYPx * orbitMultiplier * cos(angleRad).toFloat() + (bias?.second ?: 0f) * height
+
+        val scale = if (useScaleAnimation) 0.7f + 0.3f * reveal else 1f
+        val hasInlineExtras = content.actions.isNotEmpty() || content.pinnedDetailLines.isNotEmpty()
+        val enlarge = isPinned && hasInlineExtras
+        val radius = baseRadiusPx * scale * (if (enlarge) enlargedRadiusMultiplier else 1f)
+
+        val maxTextWidth = radius * 2.4f
+        val primaryLines = wrapText(content.primaryText, maxTextWidth, primaryPaint, maxLines = 2)
+        val secondaryLines = content.secondaryText?.let {
+            wrapText(it, maxTextWidth, secondaryPaint, maxLines = 2)
+        } ?: emptyList()
+        val detailLines = if (enlarge) content.pinnedDetailLines else emptyList()
+
+        // Text height is unbounded (title + up to 2 primary + up to 2 secondary lines
+        // routinely exceeds the ring's diameter), so text can end up vertically
+        // overlapping the ring's own stroke, or spilling past the corner brackets
+        // entirely — laying out every Y-position up front (rather than drawing inline
+        // as we go) lets a backing plate be sized to the ACTUAL content and drawn
+        // before any text, so legibility never depends on what's behind it.
+        val iconCenterY = py - radius * 0.4f
+        val titleY = iconCenterY + radius * 0.45f
+        var cursorY = titleY + titlePaint.textSize * 1.3f
+        val primaryStartY = cursorY
+        cursorY += primaryLines.size * primaryPaint.textSize * 1.2f
+        val secondaryStartY = cursorY
+        cursorY += secondaryLines.size * secondaryPaint.textSize * 1.2f
+        val detailStartY = cursorY
+        cursorY += detailLines.size * secondaryPaint.textSize * 1.2f
+        val progressY = cursorY + radius * 0.08f
+        cursorY = if (content.progressFraction != null) progressY + radius * 0.06f else cursorY
+
+        var actionsRowY = cursorY
+        val actionButtons = mutableListOf<RectF>()
+        if (enlarge && content.actions.isNotEmpty()) {
+            actionsRowY = cursorY + radius * 0.24f
+            val buttonRadius = radius * 0.26f
+            val spacing = buttonRadius * 2.6f
+            val totalWidth = spacing * (content.actions.size - 1)
+            val startX = px - totalWidth / 2f
+            for (i in content.actions.indices) {
+                val bx = startX + spacing * i
+                actionButtons += RectF(bx - buttonRadius, actionsRowY - buttonRadius, bx + buttonRadius, actionsRowY + buttonRadius)
+            }
+            cursorY = actionsRowY + buttonRadius
+        }
+
+        return PinnedContentLayout(
+            px = px,
+            py = py,
+            radius = radius,
+            maxTextWidth = maxTextWidth,
+            iconCenterY = iconCenterY,
+            titleY = titleY,
+            primaryStartY = primaryStartY,
+            primaryLines = primaryLines,
+            secondaryStartY = secondaryStartY,
+            secondaryLines = secondaryLines,
+            detailStartY = detailStartY,
+            detailLines = detailLines,
+            progressY = progressY,
+            contentBottom = cursorY,
+            actionsRowY = actionsRowY,
+            actionButtons = actionButtons,
+        )
     }
 
     private fun drawPanel(
         canvas: Canvas,
-        centerX: Float,
-        centerY: Float,
         panel: PanelId,
         content: PanelContent,
         reveal: Float,
         isPinned: Boolean,
     ) {
-        val angleRad = Math.toRadians(panel.clockAngleDegrees.toDouble())
-        val px = centerX + orbitRadiusXPx * sin(angleRad).toFloat()
-        val py = centerY - orbitRadiusYPx * cos(angleRad).toFloat()
-
-        val scale = if (useScaleAnimation) 0.7f + 0.3f * reveal else 1f
-        val radius = baseRadiusPx * scale
+        val layout = computePinnedContentLayout(panel, content, reveal, isPinned)
+        val px = layout.px
+        val py = layout.py
+        val radius = layout.radius
         val alpha = (reveal * 255).toInt().coerceIn(0, 255)
         val glowRadius = if (isPinned) radius * 0.35f else radius * 0.18f
 
@@ -252,42 +390,71 @@ class SpatialRingView @JvmOverloads constructor(
         progressFillPaint.alpha = alpha
         glyphPaint.setShadowLayer(glowRadius, 0f, 0f, glowColor)
 
-        val maxTextWidth = radius * 2.4f
-        var cursorY = py - radius * 0.4f
+        if (alpha > 10) {
+            val plateRect = RectF(
+                px - layout.maxTextWidth / 2f - radius * 0.12f,
+                layout.titleY - titlePaint.textSize * 0.95f,
+                px + layout.maxTextWidth / 2f + radius * 0.12f,
+                layout.contentBottom + radius * 0.05f,
+            )
+            expandedFillPaint.alpha = (alpha * 0.6f).toInt()
+            canvas.drawRoundRect(plateRect, radius * 0.15f, radius * 0.15f, expandedFillPaint)
+        }
 
         val icon = content.iconDrawable
         if (icon != null) {
             val iconSize = (radius * 0.5f).toInt()
             icon.setBounds(
                 (px - iconSize / 2f).toInt(),
-                (cursorY - iconSize / 2f).toInt(),
+                (layout.iconCenterY - iconSize / 2f).toInt(),
                 (px + iconSize / 2f).toInt(),
-                (cursorY + iconSize / 2f).toInt(),
+                (layout.iconCenterY + iconSize / 2f).toInt(),
             )
             icon.alpha = alpha
             icon.draw(canvas)
         } else {
-            canvas.drawText(content.glyph, px, cursorY + glyphPaint.textSize * 0.35f, glyphPaint)
+            canvas.drawText(content.glyph, px, layout.iconCenterY + glyphPaint.textSize * 0.35f, glyphPaint)
         }
-        cursorY += radius * 0.45f
 
-        canvas.drawText(content.title.uppercase(), px, cursorY, titlePaint)
-        cursorY += titlePaint.textSize * 1.3f
+        canvas.drawText(content.title.uppercase(), px, layout.titleY, titlePaint)
 
-        for (line in wrapText(content.primaryText, maxTextWidth, primaryPaint, maxLines = 2)) {
+        var cursorY = layout.primaryStartY
+        for (line in layout.primaryLines) {
             canvas.drawText(line, px, cursorY, primaryPaint)
             cursorY += primaryPaint.textSize * 1.2f
         }
 
-        content.secondaryText?.let { secondary ->
-            for (line in wrapText(secondary, maxTextWidth, secondaryPaint, maxLines = 2)) {
-                canvas.drawText(line, px, cursorY, secondaryPaint)
-                cursorY += secondaryPaint.textSize * 1.2f
-            }
+        cursorY = layout.secondaryStartY
+        for (line in layout.secondaryLines) {
+            canvas.drawText(line, px, cursorY, secondaryPaint)
+            cursorY += secondaryPaint.textSize * 1.2f
+        }
+
+        cursorY = layout.detailStartY
+        for (line in layout.detailLines) {
+            canvas.drawText(line, px, cursorY, secondaryPaint)
+            cursorY += secondaryPaint.textSize * 1.2f
         }
 
         content.progressFraction?.let { fraction ->
-            drawProgressBar(canvas, px, cursorY + radius * 0.08f, radius * 1.1f, fraction.coerceIn(0f, 1f))
+            drawProgressBar(canvas, px, layout.progressY, radius * 1.1f, fraction.coerceIn(0f, 1f))
+        }
+
+        for ((index, rect) in layout.actionButtons.withIndex()) {
+            val action = content.actions.getOrNull(index) ?: continue
+            val bcx = rect.centerX()
+            val bcy = rect.centerY()
+            val buttonRadius = rect.width() / 2f
+
+            ringPaint.alpha = alpha
+            ringPaint.strokeWidth = buttonRadius * 0.12f
+            ringPaint.setShadowLayer(buttonRadius * 0.3f, 0f, 0f, glowColor)
+            canvas.drawCircle(bcx, bcy, buttonRadius, ringPaint)
+
+            actionGlyphPaint.alpha = alpha
+            actionGlyphPaint.textSize = buttonRadius * 1.1f
+            actionGlyphPaint.setShadowLayer(buttonRadius * 0.25f, 0f, 0f, glowColor)
+            canvas.drawText(action.glyph, bcx, bcy + actionGlyphPaint.textSize * 0.35f, actionGlyphPaint)
         }
     }
 
@@ -402,6 +569,25 @@ class SpatialRingView @JvmOverloads constructor(
         if (index !in content.expandedItems.indices) return ExpandedClickResult.ClickedOutside
 
         return ExpandedClickResult.ItemClicked(panel, index)
+    }
+
+    /**
+     * Hit-test a click against the pinned panel's own inline action buttons, if any —
+     * see [PanelContent.actions]. Returns null when the pinned panel has no actions
+     * (caller should treat the click as a normal ring-level click instead — mirrors
+     * [hitTestExpanded]'s contract exactly, just for the enlarged-in-place widget
+     * instead of the screen-centered list menu).
+     */
+    fun hitTestPinnedActions(x: Float, y: Float): ExpandedClickResult? {
+        val panel = pinnedPanel ?: return null
+        val content = panelContents[panel] ?: return null
+        if (content.actions.isEmpty()) return null
+
+        val layout = computePinnedContentLayout(panel, content, reveal = 1f, isPinned = true)
+        for ((index, rect) in layout.actionButtons.withIndex()) {
+            if (rect.contains(x, y)) return ExpandedClickResult.ItemClicked(panel, index)
+        }
+        return ExpandedClickResult.ClickedOutside
     }
 
     private fun drawProgressBar(canvas: Canvas, cx: Float, y: Float, halfWidth: Float, fraction: Float) {

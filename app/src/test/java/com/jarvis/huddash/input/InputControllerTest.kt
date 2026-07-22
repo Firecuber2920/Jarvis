@@ -15,12 +15,13 @@ import org.junit.Test
  */
 class InputControllerTest {
 
-    // Exact unit vectors toward each panel's clock-angle center (18/90/162/234/306°, magnitude 1.0).
-    private val towardTime = 0.3090170f to -0.9510565f       // 18°
+    // Exact unit vectors toward each panel's clock-angle center (30/90/150/210/270/330°, magnitude 1.0).
+    private val towardTime = 0.5f to -0.8660254f              // 30°
     private val towardAppWindow = 1f to 0f                    // 90°
-    private val towardMedia = 0.3090170f to 0.9510565f        // 162°
-    private val towardNav = -0.8090170f to 0.5877853f         // 234°
-    private val towardNotifications = -0.8090170f to -0.5877853f // 306°
+    private val towardMedia = 0.5f to 0.8660254f               // 150°
+    private val towardNav = -0.5f to 0.8660254f                // 210°
+    private val towardStatus = -1f to 0f                       // 270°
+    private val towardNotifications = -0.5f to -0.8660254f     // 330°
 
     @Test
     fun deadZone_belowThreshold_producesNoReveal() {
@@ -116,6 +117,17 @@ class InputControllerTest {
             PanelId.TIME,
             controller.pinnedPanel(),
         )
+    }
+
+    @Test
+    fun pin_towardStatusPanel_pinsAfterHoldDuration() {
+        val controller = InputController()
+        val (dx, dy) = towardStatus
+
+        controller.onPositionChanged(dx, dy, 1000L)
+        controller.onPositionChanged(dx, dy, 1000L + 400L)
+
+        assertEquals(PanelId.STATUS, controller.pinnedPanel())
     }
 
     @Test

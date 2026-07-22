@@ -4,7 +4,23 @@
       "WebSearch",
       "Bash(command -v codex)",
       "Read(//c/Users/Addis/.claude/skills/office-hours/sections/**)",
-      "Read(//c/Users/Addis/**)"
+      "Read(//c/Users/Addis/**)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-builder-profile)",
+      "Bash(open \"/c/Users/Addis/.gstack/builder-journey.md\")",
+      "Bash(start \"\" \"C:\\\\Users\\\\Addis\\\\.gstack\\\\builder-journey.md\")",
+      "Bash(open \"https://www.youtube.com/watch?v=CcnwFJqEnxU\")",
+      "Bash(start \"\" \"https://www.youtube.com/watch?v=CcnwFJqEnxU\")",
+      "Bash(~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type handoff --skill office-hours --outcome accepted --session-id \"office-hours-$$\")",
+      "Skill(plan-design-review)",
+      "Bash(command -v python3)",
+      "Bash(command -v python)",
+      "Bash(python3 -c \"import PIL\")",
+      "Bash(identify \"Photos for Claude/\"*.jpg)",
+      "Bash(command -v magick)",
+      "Bash(command -v convert)",
+      "Bash(command -v cwebp)",
+      "Bash(/c/Users/Addis/.claude/skills/gstack/browse/dist/browse goto *)",
+      "Bash(/c/Users/Addis/.claude/skills/gstack/browse/dist/browse screenshot *)"
     ]
   }
 }

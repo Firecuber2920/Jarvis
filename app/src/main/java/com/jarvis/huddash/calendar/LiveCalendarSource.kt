@@ -22,8 +22,10 @@ object CalendarAccess {
  */
 class LiveCalendarSource(private val context: Context) : CalendarSource {
 
-    override fun nextEvent(): CalendarEvent? {
-        if (!CalendarAccess.isGranted(context)) return null
+    override fun nextEvent(): CalendarEvent? = upcomingEvents(1).firstOrNull()
+
+    override fun upcomingEvents(limit: Int): List<CalendarEvent> {
+        if (!CalendarAccess.isGranted(context)) return emptyList()
 
         val now = System.currentTimeMillis()
         val lookaheadEnd = now + TimeUnit.DAYS.toMillis(LOOKAHEAD_DAYS)
@@ -36,24 +38,21 @@ class LiveCalendarSource(private val context: Context) : CalendarSource {
             CalendarContract.Instances.query(context.contentResolver, projection, now, lookaheadEnd)
                 ?.use { cursor ->
                     // Instances.query doesn't accept a sort order — the provider returns
-                    // rows roughly time-ordered per-calendar, so scan for the true soonest
-                    // BEGIN across all calendars rather than trusting row order.
-                    var soonest: CalendarEvent? = null
+                    // rows roughly time-ordered per-calendar, so collect and sort by BEGIN
+                    // across all calendars rather than trusting row order.
                     val titleIndex = cursor.getColumnIndexOrThrow(CalendarContract.Instances.TITLE)
                     val beginIndex = cursor.getColumnIndexOrThrow(CalendarContract.Instances.BEGIN)
+                    val events = mutableListOf<CalendarEvent>()
                     while (cursor.moveToNext()) {
-                        val begin = cursor.getLong(beginIndex)
-                        if (soonest == null || begin < soonest.startAtMillis) {
-                            soonest = CalendarEvent(
-                                title = cursor.getString(titleIndex) ?: "Untitled event",
-                                startAtMillis = begin,
-                            )
-                        }
+                        events += CalendarEvent(
+                            title = cursor.getString(titleIndex) ?: "Untitled event",
+                            startAtMillis = cursor.getLong(beginIndex),
+                        )
                     }
-                    soonest
-                }
+                    events.sortedBy { it.startAtMillis }.take(limit)
+                } ?: emptyList()
         } catch (e: SecurityException) {
-            null
+            emptyList()
         }
     }
 

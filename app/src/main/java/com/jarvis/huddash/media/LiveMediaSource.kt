@@ -62,6 +62,14 @@ class LiveMediaSource(private val context: Context) : MediaSource {
         }
     }
 
+    override fun play() {
+        activeController()?.transportControls?.play()
+    }
+
+    override fun pause() {
+        activeController()?.transportControls?.pause()
+    }
+
     override fun skipNext() {
         activeController()?.transportControls?.skipToNext()
     }

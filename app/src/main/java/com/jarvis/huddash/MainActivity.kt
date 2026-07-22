@@ -18,6 +18,7 @@ import android.widget.Toast
 import com.jarvis.huddash.appwindow.AppWindowLauncher
 import com.jarvis.huddash.calendar.CalendarAccess
 import com.jarvis.huddash.calendar.LiveCalendarSource
+import com.jarvis.huddash.debug.DebugTelemetry
 import com.jarvis.huddash.input.FlickDirection
 import com.jarvis.huddash.input.InputController
 import com.jarvis.huddash.media.LiveMediaSource
@@ -26,6 +27,7 @@ import com.jarvis.huddash.nav.LiveNotificationsSource
 import com.jarvis.huddash.nav.MapsNavState
 import com.jarvis.huddash.nav.NotificationAccess
 import com.jarvis.huddash.nav.NotificationsFeedState
+import com.jarvis.huddash.panel.AmbientTier
 import com.jarvis.huddash.panel.AppWindowPanelProvider
 import com.jarvis.huddash.panel.MediaPanelProvider
 import com.jarvis.huddash.panel.MediaSource
@@ -37,9 +39,14 @@ import com.jarvis.huddash.panel.NavPanelProvider
 import com.jarvis.huddash.panel.NotificationsPanelProvider
 import com.jarvis.huddash.panel.PanelId
 import com.jarvis.huddash.panel.PanelProvider
+import com.jarvis.huddash.panel.PanelRegistration
+import com.jarvis.huddash.panel.StatusPanelProvider
 import com.jarvis.huddash.panel.TimePanelProvider
+import com.jarvis.huddash.panel.resolveAmbientPanels
 import com.jarvis.huddash.render.ExpandedClickResult
 import com.jarvis.huddash.render.SpatialRingView
+import com.jarvis.huddash.status.LiveStatusSource
+import com.jarvis.huddash.status.LocationAccess
 import kotlin.math.hypot
 
 /**
@@ -67,8 +74,12 @@ class MainActivity : Activity() {
     private var activeMediaSource: MediaSource = mockMediaSource
     private val appWindowProvider: PanelProvider by lazy { AppWindowPanelProvider(this) }
     private val appWindowLauncher: AppWindowLauncher by lazy { AppWindowLauncher(this) }
+    // No mock/live swap needed here — LiveStatusSource itself degrades gracefully
+    // (time/battery always real, weather null until location + a fetch land).
+    private val statusProvider: PanelProvider by lazy { StatusPanelProvider(LiveStatusSource(this)) }
     private var notificationAccessPrompted = false
     private var calendarAccessPrompted = false
+    private var locationAccessPrompted = false
 
     /**
      * True once a docked app window (YouTube/Instagram) has been launched. While true,
@@ -86,6 +97,14 @@ class MainActivity : Activity() {
     private var pointerDownTimestamp: Long = -1L
     private var pointerDownX: Float = 0f
     private var pointerDownY: Float = 0f
+
+    // Debug overlay: toggled by two clicks landing in the dead zone (center) within
+    // DEBUG_TOGGLE_WINDOW_MILLIS of each other. A single dead-zone click already
+    // dismisses (a no-op if nothing's pinned), so a second one arriving fast is a
+    // free gesture to repurpose rather than a collision with existing behavior.
+    private var debugOverlayEnabled = false
+    private var lastDeadZoneClickAtMillis: Long = -1L
+    private var previousPinnedPanel: PanelId? = null
 
     private val watchdogTick = object : Runnable {
         override fun run() {
@@ -115,6 +134,7 @@ class MainActivity : Activity() {
         watchdogHandler.post(watchdogTick)
         promptForNotificationAccessIfNeeded()
         promptForCalendarAccessIfNeeded()
+        promptForLocationAccessIfNeeded()
     }
 
     override fun onRequestPermissionsResult(
@@ -150,6 +170,13 @@ class MainActivity : Activity() {
         if (calendarAccessPrompted || CalendarAccess.isGranted(this)) return
         calendarAccessPrompted = true
         requestPermissions(arrayOf(Manifest.permission.READ_CALENDAR), CALENDAR_PERMISSION_REQUEST_CODE)
+    }
+
+    /** ACCESS_COARSE_LOCATION for the Status panel's weather lookup — same runtime-dialog flow as calendar. */
+    private fun promptForLocationAccessIfNeeded() {
+        if (locationAccessPrompted || LocationAccess.isGranted(this)) return
+        locationAccessPrompted = true
+        requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
     }
 
     override fun onPause() {
@@ -211,6 +238,7 @@ class MainActivity : Activity() {
         val offsetX = ((event.x - centerX) / halfDim).coerceIn(-1f, 1f)
         val offsetY = ((event.y - centerY) / halfDim).coerceIn(-1f, 1f)
 
+        DebugTelemetry.recordPosition(event.eventTime)
         inputController.onPositionChanged(offsetX, offsetY, event.eventTime)
         pushStateToView()
         routeFlick()
@@ -234,25 +262,33 @@ class MainActivity : Activity() {
             return
         }
 
-        val downHit = ringView.hitTestExpanded(pointerDownX, pointerDownY)
-        val upHit = ringView.hitTestExpanded(event.x, event.y)
+        val downHit = pinnedItemHitTest(pointerDownX, pointerDownY)
+        val upHit = pinnedItemHitTest(event.x, event.y)
         if (downHit is ExpandedClickResult.ItemClicked && downHit == upHit) {
             handleClick(event.x, event.y, event.eventTime)
         }
-        // Otherwise: real drag outside any menu target — not a click, no action.
+        // Otherwise: real drag outside any menu/button target — not a click, no action.
     }
 
     /**
-     * Click routing: menu-row selection first (App Window's YouTube/Instagram/Dismiss
-     * rows, checked via the renderer's hit-test in actual screen-pixel space), then
+     * Checks the pinned panel's own clickable targets — the screen-centered list menu
+     * (App Window/Notifications) or the in-place inline action buttons (Media) — in
+     * that order. At most one of the two is ever non-empty for a given panel's content.
+     */
+    private fun pinnedItemHitTest(screenX: Float, screenY: Float): ExpandedClickResult? =
+        ringView.hitTestExpanded(screenX, screenY) ?: ringView.hitTestPinnedActions(screenX, screenY)
+
+    /**
+     * Click routing: the pinned panel's own targets first (menu rows or inline action
+     * buttons, checked via the renderer's hit-test in actual screen-pixel space), then
      * ring-level pin/dismiss (checked via the trackpad-normalized offset InputController
-     * already works in) for everything else. A click outside a shown menu — even if
-     * it's still within the pinned panel's ring wedge — dismisses, matching "click off
-     * into dead space" for the menu case specifically.
+     * already works in) for everything else. A click outside a shown menu/button row —
+     * even if it's still within the pinned panel's ring wedge — dismisses, matching
+     * "click off into dead space" for that case specifically.
      */
     private fun handleClick(screenX: Float, screenY: Float, timestampMillis: Long) {
-        when (val hit = ringView.hitTestExpanded(screenX, screenY)) {
-            is ExpandedClickResult.ItemClicked -> handleExpandedItemClick(hit.panel, hit.index)
+        when (val hit = pinnedItemHitTest(screenX, screenY)) {
+            is ExpandedClickResult.ItemClicked -> handlePinnedItemClick(hit.panel, hit.index)
             is ExpandedClickResult.ClickedOutside -> inputController.dismiss()
             null -> {
                 val halfDim = (minOf(ringView.width, ringView.height) / 2f).coerceAtLeast(1f)
@@ -260,14 +296,26 @@ class MainActivity : Activity() {
                 val centerY = ringView.height / 2f
                 val offsetX = ((screenX - centerX) / halfDim).coerceIn(-1f, 1f)
                 val offsetY = ((screenY - centerY) / halfDim).coerceIn(-1f, 1f)
+                val magnitude = hypot(offsetX.toDouble(), offsetY.toDouble())
                 inputController.onClick(offsetX, offsetY, timestampMillis)
+                if (magnitude <= DEAD_ZONE_FRACTION) maybeToggleDebugOverlay(timestampMillis)
             }
         }
         pushStateToView()
         refreshPanelContents()
     }
 
-    private fun handleExpandedItemClick(panel: PanelId, index: Int) {
+    /** See [debugOverlayEnabled] for why this rides on the existing dead-zone click path. */
+    private fun maybeToggleDebugOverlay(timestampMillis: Long) {
+        val last = lastDeadZoneClickAtMillis
+        lastDeadZoneClickAtMillis = timestampMillis
+        if (last >= 0L && timestampMillis - last <= DEBUG_TOGGLE_WINDOW_MILLIS) {
+            debugOverlayEnabled = !debugOverlayEnabled
+            lastDeadZoneClickAtMillis = -1L // consume, so a third rapid click doesn't immediately re-toggle
+        }
+    }
+
+    private fun handlePinnedItemClick(panel: PanelId, index: Int) {
         when (panel) {
             PanelId.APP_WINDOW -> when (index) {
                 0 -> {
@@ -278,23 +326,32 @@ class MainActivity : Activity() {
                     appWindowLauncher.launchInstagramVertical()
                     appWindowActive = true
                 }
-                2 -> restoreFullImmersiveHud()
+                2 -> {
+                    appWindowLauncher.launchSpotifyVertical()
+                    appWindowActive = true
+                }
+                3 -> restoreFullImmersiveHud()
+            }
+            PanelId.MEDIA -> when (index) {
+                0 -> activeMediaSource.skipPrevious()
+                1 -> if (activeMediaSource.currentMedia()?.isPlaying == true) activeMediaSource.pause() else activeMediaSource.play()
+                2 -> activeMediaSource.skipNext()
             }
             else -> {} // Notification rows are informational only for now — no per-item action defined.
         }
     }
 
     /**
-     * Flick mapping while a panel is pinned. Now that the trackpad's confirmed to have
-     * full button support, click is the primary interaction for pin/dismiss/menu
-     * selection (see [handleClick]) — flick remains Media's only control surface
-     * (transport controls have no menu UI) and stays as a redundant alternate path for
-     * App Window, which does have a menu now. Media: right/left skip next/previous,
+     * Flick mapping while a panel is pinned — a fast alternate path alongside the click
+     * targets in [handleClick], useful for rapid repeated actions (e.g. skipping several
+     * tracks) without aiming at a specific button. Media: right/left skip next/previous,
      * up/down toggle play/pause. App Window: right launches YouTube (horizontal), left
-     * launches Instagram (vertical), up dismisses and restores full HUD immersive mode.
+     * launches Instagram (vertical), down launches Spotify (vertical), up dismisses and
+     * restores full HUD immersive mode.
      */
     private fun routeFlick() {
         val flick = inputController.pollFlick() ?: return
+        DebugTelemetry.recordFlick(flick.name)
         when (inputController.pinnedPanel()) {
             PanelId.MEDIA -> {
                 when (flick) {
@@ -314,7 +371,10 @@ class MainActivity : Activity() {
                     appWindowActive = true
                 }
                 FlickDirection.UP -> restoreFullImmersiveHud()
-                FlickDirection.DOWN -> {}
+                FlickDirection.DOWN -> {
+                    appWindowLauncher.launchSpotifyVertical()
+                    appWindowActive = true
+                }
             }
             else -> {}
         }
@@ -327,47 +387,75 @@ class MainActivity : Activity() {
         applyImmersiveFullscreen()
     }
 
-    private fun refreshPanelContents() {
+    /**
+     * Panel registry: this is the one place a new panel needs to be added — a
+     * [PanelRegistration] entry with its content lookup and ambient-visibility rule.
+     * No other method needs to change; [refreshPanelContents] and [resolveAmbientPanels]
+     * are both generic over whatever's registered here.
+     */
+    private fun buildPanelRegistrations(): List<PanelRegistration> {
         val navIsLive = NotificationAccess.isGranted(this)
-        val navProvider = if (navIsLive) liveNavProvider else mockNavProvider
-        val timeProvider = if (CalendarAccess.isGranted(this)) liveTimeProvider else mockTimeProvider
+        val timeIsLive = CalendarAccess.isGranted(this)
         // Media and Notifications both reuse the same notification-listener signal
         // Nav depends on — no separate permission gate for either.
         activeMediaSource = if (navIsLive) liveMediaSource else mockMediaSource
-        val notificationsProvider = if (navIsLive) liveNotificationsProvider else mockNotificationsProvider
 
-        ringView.panelContents = mapOf(
-            PanelId.TIME to timeProvider.getContent(),
-            PanelId.NOTIFICATIONS to notificationsProvider.getContent(),
-            PanelId.NAV to navProvider.getContent(),
-            PanelId.MEDIA to MediaPanelProvider(activeMediaSource).getContent(),
-            PanelId.APP_WINDOW to appWindowProvider.getContent(),
+        return listOf(
+            PanelRegistration(
+                id = PanelId.TIME,
+                content = { (if (timeIsLive) liveTimeProvider else mockTimeProvider).getContent() },
+            ),
+            PanelRegistration(
+                id = PanelId.NOTIFICATIONS,
+                content = { (if (navIsLive) liveNotificationsProvider else mockNotificationsProvider).getContent() },
+                // Flashes fully visible for a short window right after a genuinely new
+                // notification arrives, then reverts to normal gesture-only visibility.
+                ambientTier = {
+                    val sinceLastNotification = SystemClock.elapsedRealtime() - NotificationsFeedState.lastNewNotificationAtMillis
+                    if (navIsLive && sinceLastNotification in 0 until NOTIFICATION_ALERT_WINDOW_MILLIS) {
+                        AmbientTier.TRANSIENT
+                    } else {
+                        AmbientTier.NONE
+                    }
+                },
+            ),
+            PanelRegistration(
+                id = PanelId.NAV,
+                content = { (if (navIsLive) liveNavProvider else mockNavProvider).getContent() },
+                // Stays visible for the whole active Maps session, not just while the
+                // trackpad is pointed at it — only when we have a real signal to trust.
+                ambientTier = { if (navIsLive && MapsNavState.isActive) AmbientTier.ONGOING else AmbientTier.NONE },
+            ),
+            PanelRegistration(
+                id = PanelId.MEDIA,
+                content = { MediaPanelProvider(activeMediaSource).getContent() },
+            ),
+            PanelRegistration(
+                id = PanelId.APP_WINDOW,
+                content = { appWindowProvider.getContent() },
+            ),
+            PanelRegistration(
+                id = PanelId.STATUS,
+                content = { statusProvider.getContent() },
+            ),
         )
+    }
 
-        val ambient = mutableSetOf<PanelId>()
-
-        // Nav stays visible for the whole active Maps session, not just while the
-        // trackpad is pointed at it — only when we have a real signal to trust (live
-        // source + Maps actually reporting an active route), never for the mock.
-        if (navIsLive && MapsNavState.isActive) ambient += PanelId.NAV
-
-        // Notifications flashes fully visible for a short window right after a
-        // genuinely new notification arrives ("light up and show it"), then reverts
-        // to normal gesture-only visibility — unlike Nav's steady ambient-for-the-
-        // whole-session behavior, this is a brief alert, not a persistent state.
-        if (navIsLive) {
-            val sinceLastNotification = SystemClock.elapsedRealtime() - NotificationsFeedState.lastNewNotificationAtMillis
-            if (sinceLastNotification in 0 until NOTIFICATION_ALERT_WINDOW_MILLIS) {
-                ambient += PanelId.NOTIFICATIONS
-            }
-        }
-
-        ringView.ambientPanels = ambient
+    private fun refreshPanelContents() {
+        val registrations = buildPanelRegistrations()
+        ringView.panelContents = registrations.associate { it.id to it.content() }
+        ringView.ambientPanels = resolveAmbientPanels(registrations)
     }
 
     private fun pushStateToView() {
+        val pinned = inputController.pinnedPanel()
+        if (pinned != previousPinnedPanel) {
+            if (pinned != null) DebugTelemetry.recordPin(pinned.name) else DebugTelemetry.recordDismiss()
+            previousPinnedPanel = pinned
+        }
         ringView.reveals = inputController.currentReveals()
-        ringView.pinnedPanel = inputController.pinnedPanel()
+        ringView.pinnedPanel = pinned
+        ringView.debugOverlayText = if (debugOverlayEnabled) DebugTelemetry.summaryText() else null
     }
 
     @SuppressLint("InlinedApi")
@@ -395,8 +483,13 @@ class MainActivity : Activity() {
     companion object {
         private const val WATCHDOG_INTERVAL_MILLIS = 250L
         private const val CALENDAR_PERMISSION_REQUEST_CODE = 1001
+        private const val LOCATION_PERMISSION_REQUEST_CODE = 1002
         private const val CLICK_MAX_DURATION_MILLIS = 400L
         private const val CLICK_MAX_MOVEMENT_PX = 30f
         private const val NOTIFICATION_ALERT_WINDOW_MILLIS = 8_000L
+        private const val DEBUG_TOGGLE_WINDOW_MILLIS = 500L
+        /** Must match InputController's default deadZoneFraction — used only to classify a
+         *  click as "in the dead zone" for the debug-overlay toggle, not for ring logic itself. */
+        private const val DEAD_ZONE_FRACTION = 0.15f
     }
 }

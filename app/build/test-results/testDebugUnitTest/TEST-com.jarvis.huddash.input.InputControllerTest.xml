@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jarvis.huddash.input.InputControllerTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-07-15T15:35:31.485Z" hostname="HEFF-L-02" time="0.019">
+  <properties/>
+  <testcase name="pin_releasedBeforeHoldDurationCompletes_doesNotPin" classname="com.jarvis.huddash.input.InputControllerTest" time="0.009"/>
+  <testcase name="dismiss_touchingDeadSpaceWhilePinned_unpinsImmediately_noDwellRequired" classname="com.jarvis.huddash.input.InputControllerTest" time="0.001"/>
+  <testcase name="flick_quickOutAndBackWhilePinned_reportsDirectionAndSurvivesThePin" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="deadZone_justAboveThreshold_producesSmallReveal" classname="com.jarvis.huddash.input.InputControllerTest" time="0.004"/>
+  <testcase name="flick_belowThreshold_producesNoFlickAndDismissesOnReturnToCenter" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="staleInput_withinTimeoutWindow_staysActive" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="switch_nudgingTowardAnotherPanelLongEnough_switchesThePinDirectly" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="flick_tooSlowToCountAsFlick_dismissesInsteadSinceItEndsAtCenter" classname="com.jarvis.huddash.input.InputControllerTest" time="0.001"/>
+  <testcase name="deadZone_belowThreshold_producesNoReveal" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="pin_towardStatusPanel_pinsAfterHoldDuration" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="staleInput_timeoutDecaysToNeutral" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="switch_brieflyNudgingTowardAnotherPanel_doesNotSwitchUntilHoldCompletes" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="pin_sustainedAboveThresholdForHoldDuration_pinsThePanel" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="flick_pollFlick_clearsAfterReading" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <testcase name="reconnect_resumesNormallyAfterStaleDecay_noExplicitResetNeeded" classname="com.jarvis.huddash.input.InputControllerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -23,19 +23,34 @@ data class PanelContent(
      * Items are flat rows: their own [expandedItems] is ignored (no nesting).
      */
     val expandedItems: List<PanelContent> = emptyList(),
+    /**
+     * Extra lines shown only while this panel is pinned, appended below primary/secondary
+     * text within the SAME widget (not a separate box) — the panel simply grows to fit.
+     * E.g. Time's additional upcoming events. Empty for panels with nothing extra to show.
+     */
+    val pinnedDetailLines: List<String> = emptyList(),
+    /**
+     * Inline action buttons drawn within the (enlarged) pinned widget itself — e.g.
+     * Media's transport controls. Distinct from [expandedItems]: this stays the same
+     * widget, just bigger, rather than replacing it with a list-menu takeover.
+     */
+    val actions: List<PanelAction> = emptyList(),
 )
 
+data class PanelAction(val glyph: String, val label: String)
+
 /**
- * Angular position around the ring — evenly spaced (72° apart, 5 panels).
+ * Angular position around the ring — evenly spaced (60° apart, 6 panels).
  * APP_WINDOW is pinned to exactly 90° (true right) per its "right peripheral vision"
- * requirement; the other four fall out at 72° increments from there.
+ * requirement; the other five fall out at 60° increments from there.
  */
 enum class PanelId(val clockAngleDegrees: Float) {
-    TIME(18f),
+    TIME(30f),
     APP_WINDOW(90f),
-    MEDIA(162f),
-    NAV(234f),
-    NOTIFICATIONS(306f),
+    MEDIA(150f),
+    NAV(210f),
+    STATUS(270f),
+    NOTIFICATIONS(330f),
 }
 
 fun interface PanelProvider {

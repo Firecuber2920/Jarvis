@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- API 30+ package visibility: needed for getLaunchIntentForPackage to resolve
          these apps at all. Notification/media-session lookups elsewhere don't need
@@ -10,6 +12,7 @@
     <queries>
         <package android:name="com.google.android.youtube" />
         <package android:name="com.instagram.android" />
+        <package android:name="com.spotify.music" />
     </queries>
 
     <application

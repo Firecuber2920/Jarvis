@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 
 private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
 private const val INSTAGRAM_PACKAGE = "com.instagram.android"
+private const val SPOTIFY_PACKAGE = "com.spotify.music"
 
 /**
  * Pin ("click") reveals a real menu — same expanded-detail-view mechanism as
@@ -36,6 +37,13 @@ class AppWindowPanelProvider(private val context: Context) : PanelProvider {
                     secondaryText = "flick ←",
                     glyph = "◆",
                     iconDrawable = appIcon(INSTAGRAM_PACKAGE),
+                ),
+                PanelContent(
+                    title = "Spotify",
+                    primaryText = "Portrait player",
+                    secondaryText = "flick ↓",
+                    glyph = "♫",
+                    iconDrawable = appIcon(SPOTIFY_PACKAGE),
                 ),
                 PanelContent(
                     title = "Dismiss",

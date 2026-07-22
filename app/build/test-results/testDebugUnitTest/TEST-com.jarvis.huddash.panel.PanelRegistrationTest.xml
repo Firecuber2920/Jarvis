@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jarvis.huddash.panel.PanelRegistrationTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-07-15T15:35:31.507Z" hostname="HEFF-L-02" time="0.019">
+  <properties/>
+  <testcase name="ongoingPanel_suppressesTransientPanel" classname="com.jarvis.huddash.panel.PanelRegistrationTest" time="0.015"/>
+  <testcase name="transientPanel_isAmbientWhenNoOngoingPanelActive" classname="com.jarvis.huddash.panel.PanelRegistrationTest" time="0.001"/>
+  <testcase name="noAmbientPanels_resolvesToEmptySet" classname="com.jarvis.huddash.panel.PanelRegistrationTest" time="0.0"/>
+  <testcase name="ongoingPanel_isAmbientWithNoConflict" classname="com.jarvis.huddash.panel.PanelRegistrationTest" time="0.001"/>
+  <testcase name="multipleOngoingPanels_allStayAmbient" classname="com.jarvis.huddash.panel.PanelRegistrationTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
