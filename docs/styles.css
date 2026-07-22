@@ -136,6 +136,9 @@ h1, h2 {
   justify-content: center;
 }
 .media-box img { width: 100%; height: 100%; object-fit: cover; }
+/* hardware flat-lay is 4:3 in a 16:9 box -- contain instead of cover so
+   nothing at top/bottom of frame gets cropped off. */
+.media-box img.hardware-shot { object-fit: contain; }
 .media-box.placeholder {
   color: var(--text-dim);
   font-size: 13px;
