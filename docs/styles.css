@@ -168,33 +168,21 @@ h1, h2 {
   .split { flex-direction: column; }
 }
 
-/* ---------- ring-reveal (scroll-linked) ---------- */
-.stops {
-  display: flex;
-  flex-direction: column;
-  gap: 100px;
-  margin-top: 60px;
-}
-.stop {
-  display: flex;
+/* ---------- the ring: all panels shown at once, as a grid ---------- */
+.ring-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 32px;
-  align-items: center;
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  margin-top: 40px;
 }
-.stop.is-visible { opacity: 1; transform: translateY(0); }
-
-/* Reduced-motion: show every stop statically, no animation at all */
-@media (prefers-reduced-motion: reduce) {
-  .stop { opacity: 1; transform: none; transition: none; }
+@media (max-width: 640px) {
+  .ring-grid { grid-template-columns: 1fr; }
 }
-
-.stop .num {
+.panel .num {
   font-size: 12px;
   color: var(--cyan-dim);
   letter-spacing: 2px;
-  min-width: 160px;
+  margin-bottom: 8px;
 }
 
 /* Corner-bracket text description, replacing the ring-widget graphic per
@@ -218,24 +206,6 @@ h1, h2 {
   margin: 0;
   color: var(--text);
   font-size: 16px;
-}
-
-/* Native CSS scroll-timeline path (Chromium). Progressively enhances the
-   IntersectionObserver fallback below -- if the browser doesn't support
-   scroll-timeline, this rule simply never applies and JS handles it. */
-@supports (animation-timeline: view()) {
-  .stop {
-    animation: reveal-stop linear;
-    animation-timeline: view();
-    animation-range: entry 0% cover 30%;
-  }
-  @keyframes reveal-stop {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-}
-@supports (animation-timeline: view()) and (prefers-reduced-motion: reduce) {
-  .stop { animation: none; opacity: 1; transform: none; }
 }
 
 /* ---------- how it works: corner-bracket numbered steps,

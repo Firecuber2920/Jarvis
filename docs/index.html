@@ -84,38 +84,42 @@
         <img src="images/notifications-panel.jpg" class="notifications-shot"
              alt="On-glass HUD capture: a cyan ring labeled NOTIFICATIONS with a Samsung DeX notification shown inside it">
       </div>
+      <div class="media-box" style="margin-top: 16px;">
+        <img src="images/hero-time-panel.jpg" class="time-shot"
+             alt="On-glass HUD capture: a cyan ring showing the next calendar event, Physical Making, in 10 hours 6 minutes">
+      </div>
     </div>
   </div>
 </section>
 
-<!-- RING REVEAL: scroll-linked, one stop per panel type. The "whoa" --
-     the page's own interaction demonstrates the product's interaction model. -->
+<!-- THE RING: all panels shown at once as a grid. Previously a scroll-linked
+     reveal (one stop at a time); changed to a static grid on request. -->
 <section>
   <h2 class="section-heading">THE RING</h2>
-  <p class="section-sub">scroll to see each panel reveal, the same way the trackpad reveals it on-glass</p>
-  <div class="stops">
-    <div class="stop">
+  <p class="section-sub">every panel the trackpad can reveal on-glass</p>
+  <div class="ring-grid">
+    <div class="panel">
       <div class="num">01 / TIME</div>
       <div class="stop-desc">
         <div class="corner tl"></div><div class="corner br"></div>
         <p>Your next calendar event and a live countdown, glanceable without unlocking your phone.</p>
       </div>
     </div>
-    <div class="stop">
+    <div class="panel">
       <div class="num">02 / NOTIFICATIONS</div>
       <div class="stop-desc">
         <div class="corner tl"></div><div class="corner br"></div>
         <p>Incoming phone notifications surfaced directly in your field of view as they arrive.</p>
       </div>
     </div>
-    <div class="stop">
+    <div class="panel">
       <div class="num">03 / NAV</div>
       <div class="stop-desc">
         <div class="corner tl"></div><div class="corner br"></div>
         <p>Turn-by-turn directions relayed from Google Maps, always in view without looking down.</p>
       </div>
     </div>
-    <div class="stop">
+    <div class="panel">
       <div class="num">04 / MEDIA</div>
       <div class="stop-desc">
         <div class="corner tl"></div><div class="corner br"></div>
@@ -153,6 +157,5 @@
   <a href="https://github.com/Firecuber2920/Jarvis">GitHub</a>
 </footer>
 
-<script src="script.js"></script>
 </body>
 </html>
