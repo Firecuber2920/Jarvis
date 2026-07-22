@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jarvis — HUD interaction system for XReal glasses</title>
-<meta name="description" content="Jarvis is a custom Android app driving XReal HUD glasses over Samsung DeX via a custom HID trackpad -- glanceable panels revealed proportionally as you move.">
+<title>GLANCE — HUD interaction system for XReal glasses</title>
+<meta name="description" content="GLANCE (Gesture-Linked Ambient Navigation & Control Environment) is a custom Android app driving XReal HUD glasses over Samsung DeX via a custom HID trackpad -- glanceable panels revealed proportionally as you move.">
 
 <!-- OG tags for LinkedIn / portfolio link previews -->
-<meta property="og:title" content="Jarvis — HUD interaction system for XReal glasses">
-<meta property="og:description" content="A custom Android app driving XReal HUD glasses over Samsung DeX via a custom HID trackpad -- glanceable panels revealed proportionally as you move.">
+<meta property="og:title" content="GLANCE — HUD interaction system for XReal glasses">
+<meta property="og:description" content="Gesture-Linked Ambient Navigation & Control Environment -- a custom Android app driving XReal HUD glasses over Samsung DeX via a custom HID trackpad.">
 <meta property="og:image" content="images/hero-time-panel.jpg">
 <meta property="og:type" content="website">
 
@@ -20,7 +20,8 @@
 <!-- HERO: 3-second view -- product name, one real on-glass ring capture,
      one-line premise. Nothing else competes for attention here. -->
 <section class="hero">
-  <h1>JARVIS</h1>
+  <h1>GLANCE</h1>
+  <p class="acronym">Gesture-Linked Ambient Navigation &amp; Control Environment</p>
   <p class="premise">
     A heads-up interaction system for XReal glasses, driven by a custom HID
     trackpad — glanceable panels revealed proportionally as you move.
@@ -71,42 +72,30 @@
   <div class="stops">
     <div class="stop">
       <div class="num">01 / TIME</div>
-      <div class="bracket-frame small">
-        <div class="corner tl"></div><div class="corner tr"></div>
-        <div class="corner bl"></div><div class="corner br"></div>
-        <div class="ring"></div>
-        <img src="images/hero-time-panel.jpg" alt="On-glass HUD capture: a cyan ring showing the next calendar event, Physical Making, in 10 hours 6 minutes" style="position:absolute;inset:10px;border-radius:50%;object-fit:cover;object-position:50% 18%;width:calc(100% - 20px);height:calc(100% - 20px);">
+      <div class="stop-desc">
+        <div class="corner tl"></div><div class="corner br"></div>
+        <p>Your next calendar event and a live countdown, glanceable without unlocking your phone.</p>
       </div>
     </div>
     <div class="stop">
       <div class="num">02 / NOTIFICATIONS</div>
-      <div class="bracket-frame small">
-        <div class="corner tl"></div><div class="corner tr"></div>
-        <div class="corner bl"></div><div class="corner br"></div>
-        <div class="ring"></div>
-        <img src="images/notifications-panel.jpg" alt="On-glass HUD capture: a cyan ring labeled NOTIFICATIONS with a Samsung DeX notification shown inside it" style="position:absolute;inset:10px;border-radius:50%;object-fit:cover;object-position:50% 29%;width:calc(100% - 20px);height:calc(100% - 20px);">
+      <div class="stop-desc">
+        <div class="corner tl"></div><div class="corner br"></div>
+        <p>Incoming phone notifications surfaced directly in your field of view as they arrive.</p>
       </div>
     </div>
     <div class="stop">
       <div class="num">03 / NAV</div>
-      <!-- No real photo yet -- SVG ring diagram placeholder per the design
-           doc's Interaction States table, instead of a blank gap. -->
-      <div class="bracket-frame small">
-        <div class="corner tl"></div><div class="corner tr"></div>
-        <div class="corner bl"></div><div class="corner br"></div>
-        <div class="ring"></div>
-        <div class="ring-inner"></div>
-        <div class="ring-label"><div class="kicker">NAV</div></div>
+      <div class="stop-desc">
+        <div class="corner tl"></div><div class="corner br"></div>
+        <p>Turn-by-turn directions relayed from Google Maps, always in view without looking down.</p>
       </div>
     </div>
     <div class="stop">
       <div class="num">04 / MEDIA</div>
-      <div class="bracket-frame small">
-        <div class="corner tl"></div><div class="corner tr"></div>
-        <div class="corner bl"></div><div class="corner br"></div>
-        <div class="ring"></div>
-        <div class="ring-inner"></div>
-        <div class="ring-label"><div class="kicker">MEDIA</div></div>
+      <div class="stop-desc">
+        <div class="corner tl"></div><div class="corner br"></div>
+        <p>Playback controls and now-playing info for whatever's active on your phone.</p>
       </div>
     </div>
   </div>

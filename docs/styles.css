@@ -57,8 +57,6 @@ h1, h2 {
   height: 220px;
   margin: 0 auto;
 }
-.bracket-frame.small { width: 130px; height: 130px; }
-
 .bracket-frame .corner {
   content: '';
   position: absolute;
@@ -67,7 +65,6 @@ h1, h2 {
   border: var(--bracket-thickness) solid var(--cyan);
   filter: drop-shadow(0 0 6px var(--cyan-glow));
 }
-.bracket-frame.small .corner { width: 18px; height: 18px; }
 .bracket-frame .corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
 .bracket-frame .corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
 .bracket-frame .corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
@@ -103,6 +100,13 @@ h1, h2 {
   color: var(--cyan);
   text-shadow: 0 0 14px var(--cyan-glow);
   margin-bottom: 8px;
+}
+.hero .acronym {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--cyan-dim);
+  text-transform: uppercase;
+  margin: 0;
 }
 .hero .premise {
   color: var(--text-dim);
@@ -191,6 +195,29 @@ h1, h2 {
   color: var(--cyan-dim);
   letter-spacing: 2px;
   min-width: 160px;
+}
+
+/* Corner-bracket text description, replacing the ring-widget graphic per
+   panel -- same motif as the hero ring and How It Works steps, so the page
+   still reads as one visual system even without a per-panel image. */
+.stop-desc {
+  position: relative;
+  padding: 20px 24px;
+  max-width: 480px;
+}
+.stop-desc .corner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: var(--bracket-thickness) solid var(--cyan);
+  filter: drop-shadow(0 0 6px var(--cyan-glow));
+}
+.stop-desc .corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+.stop-desc .corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+.stop-desc p {
+  margin: 0;
+  color: var(--text);
+  font-size: 16px;
 }
 
 /* Native CSS scroll-timeline path (Chromium). Progressively enhances the
